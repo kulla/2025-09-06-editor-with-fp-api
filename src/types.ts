@@ -28,3 +28,21 @@ interface EntryOfType<T extends NodeType> {
   parentKey: ParentKey<T>
   value: EntryValue<T>
 }
+
+export interface ReadonlyState {
+  has(key: Key): boolean
+  get<T extends NodeType>(key: Key<T>): Entry<T>
+}
+
+export interface WritableState extends ReadonlyState {
+  update<T extends NodeType>(
+    key: Key<T>,
+    updateFn: EntryValue<T> | ((e: EntryValue<T>) => EntryValue<T>),
+  ): void
+  insertRoot(key: Key<'root'>, value: EntryValue<'root'>): Key<'root'>
+  insert<T extends Exclude<NodeType, 'root'>>(
+    type: T,
+    parentKey: Key<T>,
+    createValue: (key: Key<T>) => EntryValue<T>,
+  ): Key<T>
+}
