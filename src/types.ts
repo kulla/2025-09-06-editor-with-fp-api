@@ -72,7 +72,7 @@ export const RootNode = new EditorNode<{
 }>('root')
 export type RootNode = typeof RootNode
 
-const RegisteredNode = [RootNode, TextNode, ParagraphNode, ContentNode] as const
+const RegisteredNode = [RootNode, ContentNode, ParagraphNode, TextNode] as const
 type RegisteredNode = (typeof RegisteredNode)[number]
 
 /*const EditorNodeMap = Object.fromEntries(
