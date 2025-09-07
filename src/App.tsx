@@ -3,22 +3,22 @@ import './App.css'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorState } from './hooks/use-editor-state'
 import { insertRoot } from './nodes/insert'
-import type { Key } from './types'
+import type { JSONValue, Key } from './types'
 
 const rootKey: Key<'root'> = 'root:1'
-
+const initialValue: JSONValue<'root'> = {
+  type: 'document',
+  document: 'Hello, world!',
+}
 export default function App() {
   const { state } = useEditorState()
 
   useEffect(() => {
     setTimeout(() => {
       if (!state.has(rootKey)) {
-        state.update((transaction) => {
-          insertRoot(transaction, rootKey, {
-            type: 'document',
-            document: 'Hello, world!',
-          })
-        })
+        state.update((transaction) =>
+          insertRoot(transaction, rootKey, initialValue),
+        )
       }
     }, 1000)
   }, [state])
