@@ -8,7 +8,10 @@ import type { JSONValue, Key } from './types'
 const rootKey: Key<'root'> = 'root:1'
 const initialValue: JSONValue<'root'> = {
   type: 'document',
-  document: 'Hello, world!',
+  document: [
+    { type: 'paragraph', value: 'Hello, Rsbuild!' },
+    { type: 'paragraph', value: 'This is a sample document.' },
+  ],
 }
 export default function App() {
   const { state } = useEditorState()

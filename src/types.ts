@@ -2,15 +2,29 @@ import type { Text } from 'yjs'
 
 interface NodeMap {
   root: {
-    jsonValue: { type: 'document'; document: JSONValue<'text'> }
-    entryValue: Key<'text'>
+    jsonValue: { type: 'document'; document: JSONValue<'content'> }
+    entryValue: Key<'content'>
     parentKey: null
   }
   text: {
     jsonValue: string
     entryValue: Text
-    parentKey: Key<'root'>
+    parentKey: Key
   }
+  paragraph: WrappedNode<'paragraph', 'text'>
+  content: ArrayNode<'paragraph'>
+}
+
+interface WrappedNode<T extends NodeType, C extends NodeType> {
+  jsonValue: { type: T; value: JSONValue<C> }
+  entryValue: Key<C>
+  parentKey: Key
+}
+
+interface ArrayNode<C extends NodeType> {
+  jsonValue: JSONValue<C>[]
+  entryValue: Key<C>[]
+  parentKey: Key
 }
 
 export type NodeType = keyof NodeMap

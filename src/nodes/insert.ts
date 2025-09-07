@@ -15,7 +15,7 @@ export function insertRoot(
 ): Key<'root'> {
   invariant(!state.has(key), `Root with key "${key}" is already stored`)
 
-  state.insertRoot(key, insert(state, 'text', key, value.document))
+  state.insertRoot(key, insert(state, 'content', key, value.document))
 
   return key
 }
@@ -26,8 +26,18 @@ export function insert<T extends Exclude<NodeType, 'root'>>(
   parentKey: ParentKey<T>,
   value: JSONValue<T>,
 ): Key<T> {
-  const text = new Y.Text()
-  text.insert(0, value)
+  if (Array.isArray(value)) {
+    return state.insert(type, parentKey, (key) =>
+      value.map((child) => insert(state, 'paragraph', key, child)),
+    )
+  } else if (typeof value === 'string') {
+    const text = new Y.Text()
+    text.insert(0, value)
 
-  return state.insert(type, parentKey, () => text)
+    return state.insert(type, parentKey, () => text)
+  } else {
+    return state.insert(type, parentKey, (key) =>
+      insert(state, 'text', key, value.value),
+    )
+  }
 }
