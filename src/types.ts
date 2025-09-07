@@ -1,60 +1,115 @@
 import type { Text } from 'yjs'
 
-interface NodeMap {
-  root: {
-    jsonValue: { type: 'document'; document: JSONValue<'content'> }
-    entryValue: Key<'content'>
+interface NodeDescription {
+  type: string
+  jsonValue: unknown
+  entryValue: object | string | number | boolean
+}
+type KeyValue<T extends string> = `${T}:${number}`
+
+export class EditorNode<Description extends NodeDescription = NodeDescription> {
+  constructor(public readonly type: Description['type']) {}
+
+  get jsonValue(): Description['jsonValue'] {
+    throw new Error('This is a type-only property')
   }
-  text: {
-    jsonValue: string
-    entryValue: Text
+
+  get entryValue(): Description['entryValue'] {
+    throw new Error('This is a type-only property')
   }
-  paragraph: WrappedNode<'paragraph', 'text'>
-  content: ArrayNode<'paragraph'>
 }
 
-interface WrappedNode<T extends NodeType, C extends NodeType> {
-  jsonValue: { type: T; value: JSONValue<C> }
-  entryValue: Key<C>
+class WrappedNode<
+  Type extends string,
+  Child extends EditorNode,
+> extends EditorNode<{
+  type: Type
+  jsonValue: { type: Type; value: Child['jsonValue'] }
+  entryValue: KeyValue<Child['type']>
+}> {
+  constructor(
+    type: Type,
+    public readonly child: Child,
+  ) {
+    super(type)
+  }
 }
 
-interface ArrayNode<C extends NodeType> {
-  jsonValue: JSONValue<C>[]
-  entryValue: Key<C>[]
+class ArrayNode<
+  Type extends string,
+  Child extends EditorNode,
+> extends EditorNode<{
+  type: Type
+  jsonValue: Child['jsonValue'][]
+  entryValue: KeyValue<Child['type']>[]
+}> {
+  constructor(
+    type: Type,
+    public readonly child: Child,
+  ) {
+    super(type)
+  }
 }
 
-export type NodeType = keyof NodeMap
+export const TextNode = new EditorNode<{
+  type: 'text'
+  jsonValue: string
+  entryValue: Text
+}>('text')
+export type TextNode = typeof TextNode
 
-export type Key<T extends NodeType = NodeType> = `${T}:${number}`
+export const ParagraphNode = new WrappedNode('paragraph', TextNode)
+export type ParagraphNode = typeof ParagraphNode
 
-export type JSONValue<T extends NodeType> = NodeMap[T]['jsonValue']
-export type EntryValue<T extends NodeType> = NodeMap[T]['entryValue']
-export type ParentKey<T extends NodeType> = T extends 'root' ? null : Key
+export const ContentNode = new ArrayNode('content', ParagraphNode)
+export type ContentNode = typeof ContentNode
 
-export type Entry<T extends NodeType = NodeType> = {
-  [S in T]: EntryOfType<S>
-}[T]
-interface EntryOfType<T extends NodeType> {
-  type: T
-  key: Key<T>
-  parentKey: ParentKey<T>
-  value: EntryValue<T>
+export const RootNode = new EditorNode<{
+  type: 'root'
+  jsonValue: { type: 'document'; document: ContentNode['jsonValue'] }
+  entryValue: KeyValue<'content'>
+}>('root')
+export type RootNode = typeof RootNode
+
+const RegisteredNode = [RootNode, TextNode, ParagraphNode, ContentNode] as const
+type RegisteredNode = (typeof RegisteredNode)[number]
+
+/*const EditorNodeMap = Object.fromEntries(
+  RegisteredNode.map((node) => [node.type, node]),
+) as {
+  [K in RegisteredNode['type']]: Extract<RegisteredNode, { type: K }>
+}
+type EditorNodeMap = typeof EditorNodeMap*/
+
+export type NodeType<N extends EditorNode = RegisteredNode> = N['type']
+export type Key<N extends EditorNode = RegisteredNode> =
+  `${NodeType<N>}:${number}`
+
+export type JSONValue<N extends EditorNode> = N['jsonValue']
+export type EntryValue<N extends EditorNode> = N['entryValue']
+export type ParentKey<N extends EditorNode> = N extends RootNode ? null : Key
+
+export interface Entry<N extends EditorNode = RegisteredNode> {
+  type: NodeType<N>
+  key: Key<N>
+  parentKey: ParentKey<N>
+  value: EntryValue<N>
 }
 
 export interface ReadonlyState {
   has(key: Key): boolean
-  get<T extends NodeType>(key: Key<T>): Entry<T>
+  get<N extends EditorNode>(key: Key<N>): Entry<N>
 }
 
 export interface WritableState extends ReadonlyState {
-  update<T extends NodeType>(
-    key: Key<T>,
-    updateFn: EntryValue<T> | ((e: EntryValue<T>) => EntryValue<T>),
+  update<N extends EditorNode>(
+    key: Key<N>,
+    updateFn: EntryValue<N> | ((e: EntryValue<N>) => EntryValue<N>),
   ): void
-  insertRoot(key: Key<'root'>, value: EntryValue<'root'>): Key<'root'>
-  insert<T extends Exclude<NodeType, 'root'>>(
-    type: T,
-    parentKey: ParentKey<T>,
-    createValue: (key: Key<T>) => EntryValue<T>,
-  ): Key<T>
+  insertRoot(key: Key<RootNode>, value: EntryValue<RootNode>): Key<RootNode>
+  insert<N extends Exclude<EditorNode, RootNode>>(
+    type: NodeType<N>,
+    parentKey: ParentKey<N>,
+    createValue: (key: Key<N>) => EntryValue<N>,
+  ): Key<N>
 }

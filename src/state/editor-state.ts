@@ -1,5 +1,5 @@
 import { invariant } from 'es-toolkit'
-import type { Entry, Key, NodeType, ReadonlyState } from '../types'
+import type { EditorNode, Entry, Key, NodeType, ReadonlyState } from '../types'
 import { Transaction } from './transaction'
 import { getSingletonYDoc } from './ydoc'
 
@@ -15,8 +15,8 @@ export class EditorState implements ReadonlyState {
     this.entries = this.ydoc.getMap<Entry>('entries')
   }
 
-  get<T extends NodeType>(key: Key<T>): Entry<T> {
-    const entry = this.entries.get(key) as Entry<T> | undefined
+  get<N extends EditorNode>(key: Key<N>): Entry<N> {
+    const entry = this.entries.get(key) as Entry<N> | undefined
 
     invariant(entry != null, `Node with key ${key} does not exist`)
 
@@ -65,12 +65,12 @@ export class EditorState implements ReadonlyState {
     this.state.set('updateCount', this.updateCount + 1)
   }
 
-  private set<T extends NodeType>(key: Key<T>, entry: Entry<T>) {
+  private set<N extends EditorNode>(key: Key<N>, entry: Entry<N>) {
     // TODO: How can I avoid the cast here?
     this.entries.set(key, entry as Entry)
   }
 
-  private generateKey<T extends NodeType>(type: T): Key<T> {
+  private generateKey<N extends EditorNode>(type: NodeType<N>): Key<N> {
     this.lastKey += 1
 
     return `${type}:${this.lastKey}`
