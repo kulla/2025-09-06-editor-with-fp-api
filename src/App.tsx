@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import './App.css'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorState } from './hooks/use-editor-state'
-import { insertRoot } from './nodes/insert'
+import { insertRoot } from './operations/insert'
 import type { JSONValue, Key } from './types'
 
 const rootKey: Key<'root'> = 'root:0'
