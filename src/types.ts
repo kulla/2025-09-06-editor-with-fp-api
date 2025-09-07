@@ -4,12 +4,10 @@ interface NodeMap {
   root: {
     jsonValue: { type: 'document'; document: JSONValue<'content'> }
     entryValue: Key<'content'>
-    parentKey: null
   }
   text: {
     jsonValue: string
     entryValue: Text
-    parentKey: Key
   }
   paragraph: WrappedNode<'paragraph', 'text'>
   content: ArrayNode<'paragraph'>
@@ -18,13 +16,11 @@ interface NodeMap {
 interface WrappedNode<T extends NodeType, C extends NodeType> {
   jsonValue: { type: T; value: JSONValue<C> }
   entryValue: Key<C>
-  parentKey: Key
 }
 
 interface ArrayNode<C extends NodeType> {
   jsonValue: JSONValue<C>[]
   entryValue: Key<C>[]
-  parentKey: Key
 }
 
 export type NodeType = keyof NodeMap
@@ -33,7 +29,7 @@ export type Key<T extends NodeType = NodeType> = `${T}:${number}`
 
 export type JSONValue<T extends NodeType> = NodeMap[T]['jsonValue']
 export type EntryValue<T extends NodeType> = NodeMap[T]['entryValue']
-export type ParentKey<T extends NodeType> = NodeMap[T]['parentKey']
+export type ParentKey<T extends NodeType> = T extends 'root' ? null : Key
 
 export type Entry<T extends NodeType = NodeType> = {
   [S in T]: EntryOfType<S>
