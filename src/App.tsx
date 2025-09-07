@@ -5,7 +5,7 @@ import { useEditorState } from './hooks/use-editor-state'
 import { insertRoot } from './nodes/insert'
 import type { JSONValue, Key } from './types'
 
-const rootKey: Key<'root'> = 'root:1'
+const rootKey: Key<'root'> = 'root:0'
 const initialValue: JSONValue<'root'> = {
   type: 'document',
   document: [

@@ -4,7 +4,7 @@ import { Transaction } from './transaction'
 import { getSingletonYDoc } from './ydoc'
 
 export class EditorState implements ReadonlyState {
-  private lastKey = -1
+  private lastKey = 0
   private readonly ydoc
   private readonly state
   private readonly entries
