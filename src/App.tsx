@@ -1,15 +1,42 @@
+import { useEffect } from 'react'
 import './App.css'
 import { DebugPanel } from './components/debug-panel'
+import { useEditorState } from './hooks/use-editor-state'
+import { insertRoot } from './nodes/insert'
+import type { Key } from './types'
+
+const rootKey: Key<'root'> = 'root:1'
 
 export default function App() {
+  const { state } = useEditorState()
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (!state.has(rootKey)) {
+        state.update((transaction) => {
+          insertRoot(transaction, rootKey, {
+            type: 'document',
+            document: 'Hello, world!',
+          })
+        })
+      }
+    }, 1000)
+  }, [state])
+
   return (
     <main className="prose p-10">
       <h1>Rsbuild with React</h1>
       <p>Start building amazing things with Rsbuild.</p>
       <DebugPanel
-        labels={{ example: 'Example' }}
-        getCurrentValue={{ example: () => 'Hello, world!' }}
-        showOnStartup={{ example: true }}
+        labels={{ entries: 'Internal state' }}
+        showOnStartup={{ entries: true }}
+        getCurrentValue={{
+          entries: () =>
+            state
+              .getEntries()
+              .map(([key, entry]) => `${key}: ${JSON.stringify(entry)}`)
+              .join('\n'),
+        }}
       />
     </main>
   )
