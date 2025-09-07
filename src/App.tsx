@@ -3,10 +3,10 @@ import './App.css'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorState } from './hooks/use-editor-state'
 import { insertRoot } from './operations/insert'
-import type { JSONValue, Key, RootNode } from './types'
+import type { JSONValue, Key } from './types'
 
-const rootKey: Key<RootNode> = 'root:0'
-const initialValue: JSONValue<RootNode> = {
+const rootKey: Key<'root'> = 'root:0'
+const initialValue: JSONValue<'root'> = {
   type: 'document',
   document: [
     { type: 'paragraph', value: 'Hello, Rsbuild!' },
