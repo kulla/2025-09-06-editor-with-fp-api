@@ -1,11 +1,12 @@
 import type { Text } from 'yjs'
 
+type KeyValue<T extends string> = `${T}:${number}`
+
 interface NodeDescription {
   type: string
   jsonValue: unknown
   entryValue: object | string | number | boolean
 }
-type KeyValue<T extends string> = `${T}:${number}`
 
 export class EditorNode<Description extends NodeDescription = NodeDescription> {
   constructor(public readonly type: Description['type']) {}
