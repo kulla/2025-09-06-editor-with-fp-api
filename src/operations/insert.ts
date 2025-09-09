@@ -28,28 +28,34 @@ export function insertRoot(
   return key
 }
 
-export function insert<T extends Exclude<NodeType, 'root'>>({
+export function insert<T extends Exclude<NodeType, 'root'>>(args: {
+  state: WritableState
+  type: T
+  parentKey: Key
+  jsonValue: JSONValue<T>
+}): Key<T>
+export function insert({
   state,
   type,
   parentKey,
   jsonValue,
 }: {
   state: WritableState
-  type: T
-  parentKey: ParentKey<T>
-  jsonValue: JSONValue<T>
-}): Key<T> {
+  type: Exclude<NodeType, 'root'>
+  parentKey: Key
+  jsonValue: JSONValue
+}): Key {
   if (type === 'content' && Array.isArray(jsonValue)) {
     return state.insert('content', parentKey, (key) =>
       jsonValue.map((child) =>
         insert({ state, type: 'paragraph', parentKey: key, jsonValue: child }),
       ),
-    ) as Key<T>
-  } else if (typeof jsonValue === 'string') {
+    )
+  } else if (type === 'text' && typeof jsonValue === 'string') {
     const text = new Y.Text()
     text.insert(0, jsonValue)
 
-    return state.insert('text', parentKey, () => text) as Key<T>
+    return state.insert('text', parentKey, () => text)
   } else {
     return state.insert(
       'paragraph',
@@ -61,6 +67,6 @@ export function insert<T extends Exclude<NodeType, 'root'>>({
           parentKey: key,
           jsonValue: (jsonValue as JSONValue<'paragraph'>).value,
         }),
-    ) as Key<T>
+    )
   }
 }

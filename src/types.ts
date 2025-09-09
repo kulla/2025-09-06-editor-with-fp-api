@@ -85,9 +85,12 @@ type EditorNodeMap = typeof EditorNodeMap
 export type NodeType<N extends EditorNode = RegisteredNode> = N['type']
 export type Key<T extends NodeType = NodeType> = KeyValue<T>
 
-export type JSONValue<T extends NodeType> = EditorNodeMap[T]['jsonValue']
+export type JSONValue<T extends NodeType = NodeType> =
+  EditorNodeMap[T]['jsonValue']
 export type EntryValue<T extends NodeType> = EditorNodeMap[T]['entryValue']
-export type ParentKey<T extends NodeType> = T extends 'root' ? null : Key
+export type ParentKey<T extends NodeType = NodeType> = T extends 'root'
+  ? null
+  : Key
 
 export type Entry<T extends NodeType = NodeType> = {
   [K in T]: EntryOfType<K>
