@@ -1,12 +1,6 @@
 import { invariant } from 'es-toolkit'
 import * as Y from 'yjs'
-import type {
-  JSONValue,
-  Key,
-  NodeType,
-  ParentKey,
-  WritableState,
-} from '../types'
+import type { JSONValue, Key, NodeType, WritableState } from '../types'
 
 export function insertRoot(
   state: WritableState,
@@ -43,30 +37,27 @@ export function insert({
   state: WritableState
   type: Exclude<NodeType, 'root'>
   parentKey: Key
-  jsonValue: JSONValue
+  jsonValue: JSONValue<Exclude<NodeType, 'root'>>
 }): Key {
-  if (type === 'content' && Array.isArray(jsonValue)) {
-    return state.insert('content', parentKey, (key) =>
+  if (Array.isArray(jsonValue)) {
+    return state.insert(type, parentKey, (key) =>
       jsonValue.map((child) =>
         insert({ state, type: 'paragraph', parentKey: key, jsonValue: child }),
       ),
     )
-  } else if (type === 'text' && typeof jsonValue === 'string') {
+  } else if (typeof jsonValue === 'string') {
     const text = new Y.Text()
     text.insert(0, jsonValue)
 
     return state.insert('text', parentKey, () => text)
   } else {
-    return state.insert(
-      'paragraph',
-      parentKey as ParentKey<'paragraph'>,
-      (key) =>
-        insert({
-          state,
-          type: 'text',
-          parentKey: key,
-          jsonValue: (jsonValue as JSONValue<'paragraph'>).value,
-        }),
+    return state.insert(type, parentKey, (key) =>
+      insert({
+        state,
+        type: 'text',
+        parentKey: key,
+        jsonValue: jsonValue.value,
+      }),
     )
   }
 }
