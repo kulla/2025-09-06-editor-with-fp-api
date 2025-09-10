@@ -11,7 +11,11 @@ export function insertRoot(
 
   state.insertRoot(
     key,
-    insert({ state, type: 'content', parentKey: key, jsonValue: value }),
+    insert({
+      state,
+      node: { type: 'content', jsonValue: value },
+      parentKey: key,
+    }),
   )
 
   return key
@@ -19,40 +23,44 @@ export function insertRoot(
 
 export function insert<T extends Exclude<NodeType, 'root'>>(args: {
   state: WritableState
-  type: T
+  node: UnstoredNode<T>
   parentKey: Key
-  jsonValue: JSONValue<T>
 }): Key<T>
 export function insert({
   state,
-  type,
+  node,
   parentKey,
-  jsonValue,
 }: {
   state: WritableState
-  type: Exclude<NodeType, 'root'>
+  node: UnstoredNode<Exclude<NodeType, 'root'>>
   parentKey: Key
-  jsonValue: JSONValue<Exclude<NodeType, 'root'>>
 }): Key {
-  if (Array.isArray(jsonValue)) {
-    return state.insert(type, parentKey, (key) =>
-      jsonValue.map((child) =>
-        insert({ state, type: 'paragraph', parentKey: key, jsonValue: child }),
+  if (node.type === 'content') {
+    return state.insert(node.type, parentKey, (key) =>
+      node.jsonValue.map((child) =>
+        insert({
+          state,
+          node: { type: 'paragraph', jsonValue: child },
+          parentKey: key,
+        }),
       ),
     )
-  } else if (typeof jsonValue === 'string') {
+  } else if (node.type === 'text') {
     const text = new Y.Text()
-    text.insert(0, jsonValue)
+    text.insert(0, node.jsonValue)
 
     return state.insert('text', parentKey, () => text)
   } else {
-    return state.insert(type, parentKey, (key) =>
+    return state.insert(node.type, parentKey, (key) =>
       insert({
         state,
-        type: 'text',
+        node: { type: 'text', jsonValue: node.jsonValue.value },
         parentKey: key,
-        jsonValue: jsonValue.value,
       }),
     )
   }
 }
+
+type UnstoredNode<T extends NodeType> = {
+  [S in T]: { type: S; jsonValue: JSONValue<S> }
+}[T]
