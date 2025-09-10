@@ -65,11 +65,7 @@ export type ParagraphNode = typeof ParagraphNode
 export const ContentNode = new ArrayNode('content', ParagraphNode)
 export type ContentNode = typeof ContentNode
 
-export const RootNode = new EditorNode<{
-  type: 'root'
-  jsonValue: { type: 'document'; document: ContentNode['jsonValue'] }
-  entryValue: KeyValue<'content'>
-}>('root')
+export const RootNode = new WrappedNode('root', ContentNode)
 export type RootNode = typeof RootNode
 
 const RegisteredNode = [RootNode, ContentNode, ParagraphNode, TextNode] as const

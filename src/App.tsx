@@ -7,8 +7,8 @@ import type { JSONValue, Key } from './types'
 
 const rootKey: Key<'root'> = 'root:0'
 const initialValue: JSONValue<'root'> = {
-  type: 'document',
-  document: [
+  type: 'root',
+  value: [
     { type: 'paragraph', value: 'Hello, Rsbuild!' },
     { type: 'paragraph', value: 'This is a sample document.' },
   ],

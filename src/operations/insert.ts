@@ -5,18 +5,13 @@ import type { JSONValue, Key, NodeType, WritableState } from '../types'
 export function insertRoot(
   state: WritableState,
   key: Key<'root'>,
-  value: JSONValue<'root'>,
+  { value }: JSONValue<'root'>,
 ): Key<'root'> {
   invariant(!state.has(key), `Root with key "${key}" is already stored`)
 
   state.insertRoot(
     key,
-    insert({
-      state,
-      type: 'content',
-      parentKey: key,
-      jsonValue: value.document,
-    }),
+    insert({ state, type: 'content', parentKey: key, jsonValue: value }),
   )
 
   return key
