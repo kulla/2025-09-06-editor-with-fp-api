@@ -40,7 +40,7 @@ interface Transaction {
     key: Key,
     updateFn: F | ((current: F) => F),
   ): void
-  insertRoot(rootKey: RootKey, value: NonRootKey): void
+  attachRoot(rootKey: RootKey, value: NonRootKey): void
   insert<T extends string>(
     typeName: T,
     parentKey: Key,
@@ -128,7 +128,7 @@ export class EditorStore {
 
         this.values.set(key, newValue)
       },
-      insertRoot: (rootKey, value) => {
+      attachRoot: (rootKey, value) => {
         invariant(
           !this.has(rootKey),
           `Root key ${rootKey} already exists in the store`,
@@ -412,7 +412,7 @@ function RootType<C extends NonRootType>(childType: C): RootType<Spec<C>> {
     storeRoot(jsonValue, tx, rootKey) {
       const flatValue = childType.storeNonRoot(jsonValue, tx, rootKey)
 
-      tx.insertRoot(rootKey, flatValue)
+      tx.attachRoot(rootKey, flatValue)
     },
   }
 }
