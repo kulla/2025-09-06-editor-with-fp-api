@@ -34,18 +34,13 @@ export function DebugPanel<T extends string>({
   return (
     <>
       <h2 id={`${panelId}-header`}>Debug Panel</h2>
-      <fieldset className="fieldset" aria-labelledby={`${panelId}-header`}>
-        <legend className="fieldset-legend">Options</legend>
+      <fieldset aria-labelledby={`${panelId}-header`}>
+        <legend>Options</legend>
         {options.map((option) => (
-          <label
-            key={option}
-            className="label"
-            htmlFor={`${panelId}-${option}-toggle`}
-          >
+          <label key={option} htmlFor={`${panelId}-${option}-toggle`}>
             <input
               id={`${panelId}-${option}-toggle`}
               type="checkbox"
-              className="toggle"
               checked={show[option]}
               aria-checked={show[option]}
               onChange={() => toggleOption(option)}
@@ -59,7 +54,7 @@ export function DebugPanel<T extends string>({
           show[option] ? (
             <pre
               key={option}
-              className="max-w-xl h-132"
+              className="max-w-xl h-64 p-4"
               role="log"
               aria-label={`Debug info for ${labels[option]}`}
               aria-live="off"
