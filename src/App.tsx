@@ -256,19 +256,16 @@ function WrappedNode<T extends string, C extends NodeSpec>(
 
 const ParagraphType = WrappedNode('paragraph', TextType)
 
-function isArrayOf<C>(
-  value: unknown,
-  itemValidator: (v: unknown) => v is C,
-): value is C[] {
-  return Array.isArray(value) && value.every(itemValidator)
-}
+const isArrayOf =
+  <C,>(itemValidator: (v: unknown) => v is C) =>
+  (value: unknown): value is C[] =>
+    Array.isArray(value) && value.every(itemValidator)
 
 function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
   childType: NodeType<C>,
 ): NodeType<{ TypeName: T; FlatValue: Key[]; JSONValue: C['JSONValue'][] }> {
-  const isValidFlatValue = (value: FlatValue): value is Key[] =>
-    isArrayOf(value, isKey)
+  const isValidFlatValue = isArrayOf(isKey)
 
   const getChildren = (store: EditorStore, node: Key) =>
     store.getValue(isValidFlatValue, node)
@@ -276,7 +273,7 @@ function ArrayNode<T extends string, C extends NodeSpec>(
   return {
     typeName,
 
-    isValidFlatValue: (value) => isArrayOf(value, isKey),
+    isValidFlatValue,
 
     toJsonValue(store, key) {
       return getChildren(store, key).map((child) =>
