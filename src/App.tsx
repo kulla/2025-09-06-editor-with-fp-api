@@ -26,7 +26,7 @@ function isKey(value: unknown): value is Key {
 
 type Guard<T> = (value: unknown) => value is T
 type PrimitiveValue = string | number | boolean
-type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | Record<string, Key>
+type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | [string, Key][]
 
 interface Transaction {
   update<F extends FlatValue>(
@@ -310,7 +310,78 @@ function ArrayNode<T extends string, C extends NodeSpec>(
   }
 }
 
-const ContentType = ArrayNode('content', ParagraphType)
+const isString: Guard<string> = (value) => typeof value === 'string'
+
+const isTupleOf =
+  <C, D>(guard1: Guard<C>, guard2: Guard<D>): Guard<[C, D]> =>
+  (value): value is [C, D] =>
+    Array.isArray(value) &&
+    value.length === 2 &&
+    guard1(value[0]) &&
+    guard2(value[1])
+
+function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
+  typeName: T,
+  childTypes: { [K in keyof C]: NodeType<C[K]> },
+  keyOrder: (keyof C)[],
+): NodeType<{
+  TypeName: T
+  FlatValue: [keyof C & string, Key][]
+  JSONValue: { [K in keyof C]: C[K]['JSONValue'] } & { type: T }
+}> {
+  const isValidFlatValue = isArrayOf(isTupleOf(isString, isKey))
+  const getChildren = (store: EditorStore, node: Key) =>
+    store.getValue(isValidFlatValue, node)
+
+  return {
+    typeName,
+
+    isValidFlatValue,
+
+    toJsonValue(store, key) {
+      const props = getChildren(store, key).map(([prop, childKey]) => {
+        return [prop, childTypes[prop].toJsonValue(store, childKey)]
+      })
+
+      return { ...Object.fromEntries(props), type: typeName }
+    },
+
+    store(tx, json, parentKey) {
+      return tx.insert(typeName, parentKey, (key) => {
+        return keyOrder.map((prop) => {
+          const childKey = childTypes[prop].store(tx, json[prop], key)
+
+          return [prop, childKey] as [keyof C & string, Key]
+        })
+      })
+    },
+  }
+}
+
+const MultipleChoiceAnswer = ObjectNode(
+  'multiple-choice.answers.item',
+  {
+    isCorrect: BooleanType,
+    text: TextType,
+  },
+  ['isCorrect', 'text'],
+)
+
+const MultipleChoiceAnswers = ArrayNode(
+  'multiple-choice.answers',
+  MultipleChoiceAnswer,
+)
+
+const Content = ArrayNode('content', ParagraphType)
+
+const MultipleChoiceExercise = ObjectNode(
+  'multiple-choice',
+  {
+    exercise: Content,
+    answers: MultipleChoiceAnswers,
+  },
+  ['exercise', 'answers'],
+)
 
 function RootType<C extends NodeSpec>(
   childType: NodeType<C>,
@@ -337,7 +408,7 @@ function RootType<C extends NodeSpec>(
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(ContentType)
+const AppRootType = RootType(Content)
 const initialValue: Spec<AppRootType>['JSONValue'] = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
