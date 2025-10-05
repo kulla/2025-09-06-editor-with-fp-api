@@ -310,6 +310,26 @@ function ArrayNode<T extends string, C extends NodeSpec>(
   }
 }
 
+function LiteralNode<V extends PrimitiveValue>(
+  value: V,
+): NodeType<{ TypeName: `literal:${V}`; FlatValue: V; JSONValue: V }> {
+  const typeName = `literal:${value}` as const
+
+  return {
+    typeName,
+
+    isValidFlatValue: (v): v is V => v === value,
+
+    toJsonValue() {
+      return value
+    },
+
+    store(tx, json, parentKey) {
+      return tx.insert(typeName, parentKey, () => json)
+    },
+  }
+}
+
 const isString: Guard<string> = (value) => typeof value === 'string'
 
 const isTupleOf =
