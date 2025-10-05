@@ -204,6 +204,24 @@ interface NodeType<S extends NodeSpec = NodeSpec> {
 
 type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
 
+const BooleanType: NodeType<{
+  TypeName: 'boolean'
+  FlatValue: boolean
+  JSONValue: boolean
+}> = {
+  typeName: 'boolean' as const,
+
+  isValidFlatValue: (value): value is boolean => typeof value === 'boolean',
+
+  toJsonValue(store, key) {
+    return store.getValue(this.isValidFlatValue, key)
+  },
+
+  store(tx, json, parentKey) {
+    return tx.insert(this.typeName, parentKey, () => json)
+  },
+}
+
 const TextType: NodeType<{
   TypeName: 'text'
   FlatValue: Y.Text
