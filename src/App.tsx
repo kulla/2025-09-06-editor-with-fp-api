@@ -448,15 +448,15 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   }
 }
 
-const MultipleChoiceAnswer = ObjectNode(
+const MultipleChoiceAnswerType = ObjectNode(
   'multipleChoiceAnswer',
   { isCorrect: BooleanType, text: TextType },
   ['isCorrect', 'text'],
 )
 
-const MultipleChoiceAnswers = ArrayNode(
+const MultipleChoiceAnswersType = ArrayNode(
   'multipleChoiceAnswers',
-  MultipleChoiceAnswer,
+  MultipleChoiceAnswerType,
 )
 
 const Content = ArrayNode('content', ParagraphType)
@@ -466,7 +466,7 @@ const MultipleChoiceExerciseType = ObjectNode(
   {
     type: LiteralNode('multipleChoiceExercise'),
     exercise: Content,
-    answers: MultipleChoiceAnswers,
+    answers: MultipleChoiceAnswersType,
   },
   ['exercise', 'answers'],
 )
