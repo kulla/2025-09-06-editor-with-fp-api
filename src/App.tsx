@@ -205,6 +205,8 @@ interface NodeType<S extends NodeSpec = NodeSpec> {
 
 type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
 
+const isBoolean: Guard<boolean> = (value) => typeof value === 'boolean'
+
 const BooleanType: NodeType<{
   TypeName: 'boolean'
   FlatValue: boolean
@@ -212,7 +214,7 @@ const BooleanType: NodeType<{
 }> = {
   typeName: 'boolean' as const,
 
-  isValidFlatValue: (value): value is boolean => typeof value === 'boolean',
+  isValidFlatValue: isBoolean,
 
   toJsonValue(store, key) {
     return store.getValue(this.isValidFlatValue, key)
