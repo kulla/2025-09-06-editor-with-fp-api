@@ -6,15 +6,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
 import { type Guard, isArrayOf, isTupleOf } from './guards'
-
-let ydoc: Y.Doc | null = null
-
-function getSingletonYDoc() {
-  if (!ydoc) {
-    ydoc = new Y.Doc()
-  }
-  return ydoc
-}
+import { getSingletonYDoc } from './store/ydoc'
 
 type Key = `${number}` | 'root'
 
