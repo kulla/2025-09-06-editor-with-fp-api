@@ -464,8 +464,8 @@ function RootType<C extends NodeSpec>(
     isValidFlatValue: isKey,
 
     toJsonValue(store, key) {
-      const value = store.getValue(this.isValidFlatValue, key)
-      return childType.toJsonValue(store, value)
+      const childKey = store.getValue(this.isValidFlatValue, key)
+      return childType.toJsonValue(store, childKey)
     },
 
     store(tx, json, rootKey) {
