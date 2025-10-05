@@ -15,7 +15,7 @@ function getSingletonYDoc() {
   return ydoc
 }
 
-type NonRootKey<T extends string = string> = `${T}:${number}`
+type NonRootKey = `${number}`
 type RootKey = 'root'
 type Key = RootKey | NonRootKey
 
@@ -27,13 +27,6 @@ type FlatValue =
   | NonRootKey[]
   | Record<string, NonRootKey>
 
-function isNonRootKey<T extends string>(
-  value: unknown,
-  type: T,
-): value is NonRootKey<T> {
-  return typeof value === 'string' && value.startsWith(`${type}:`)
-}
-
 interface Transaction {
   update<F extends FlatValue>(
     validator: (value: FlatValue) => value is F,
@@ -44,14 +37,15 @@ interface Transaction {
   insert<T extends string>(
     typeName: T,
     parentKey: Key,
-    createValue: (key: NonRootKey<T>) => FlatValue,
-  ): NonRootKey<T>
+    createValue: (key: NonRootKey) => FlatValue,
+  ): NonRootKey
 }
 
 export class EditorStore {
   protected readonly values: Y.Map<FlatValue>
   protected readonly parentKeys: Y.Map<Key | null>
   protected readonly state: Y.Map<unknown>
+  protected readonly typeNames: Y.Map<string>
   private lastKeyNumber = 0
   private currentTransaction: Transaction | null = null
 
@@ -59,6 +53,7 @@ export class EditorStore {
     this.values = ydoc.getMap('values')
     this.parentKeys = ydoc.getMap('parentKeys')
     this.state = ydoc.getMap('state')
+    this.typeNames = ydoc.getMap('typeNames')
   }
 
   getValue<F extends FlatValue>(
@@ -71,6 +66,14 @@ export class EditorStore {
     invariant(guard(value), `Value for key ${key} has unexpected type`)
 
     return value
+  }
+
+  getTypeName(key: Key): string {
+    const typeName = this.typeNames.get(key)
+
+    invariant(typeName != null, `Type name for key ${key} not found`)
+
+    return typeName
   }
 
   getParentKey(key: Key): Key | null {
@@ -135,13 +138,15 @@ export class EditorStore {
         )
 
         this.values.set(rootKey, value)
+        this.typeNames.set(rootKey, 'root')
       },
       insert: (typeName, parentKey, createValue) => {
-        const newKey = this.generateKey(typeName)
+        const newKey = this.generateNextKey()
         const value = createValue(newKey)
 
         this.parentKeys.set(newKey, parentKey)
         this.values.set(newKey, value)
+        this.typeNames.set(newKey, typeName)
 
         return newKey
       },
@@ -152,10 +157,10 @@ export class EditorStore {
     this.state.set('updateCount', this.updateCount + 1)
   }
 
-  private generateKey<T extends string>(typeName: T): NonRootKey<T> {
+  private generateNextKey(): NonRootKey {
     this.lastKeyNumber += 1
 
-    return `${typeName}:${this.lastKeyNumber}`
+    return `${this.lastKeyNumber}`
   }
 }
 
@@ -179,6 +184,11 @@ export function useEditorStore() {
       return lastReturn.current
     },
   )
+}
+
+interface FlatNode {
+  store: EditorStore
+  key: Key
 }
 
 interface NodeSpec {
