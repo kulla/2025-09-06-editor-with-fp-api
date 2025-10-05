@@ -440,7 +440,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
       })
 
       return (
-        <HtmlTag key={key} id={key} data-key={key}>
+        <HtmlTag key={key} id={key} data-key={key} className={typeName}>
           {children}
         </HtmlTag>
       )
@@ -449,22 +449,22 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
 }
 
 const MultipleChoiceAnswer = ObjectNode(
-  'multiple-choice.answers.item',
+  'multipleChoiceAnswer',
   { isCorrect: BooleanType, text: TextType },
   ['isCorrect', 'text'],
 )
 
 const MultipleChoiceAnswers = ArrayNode(
-  'multiple-choice.answers',
+  'multipleChoiceAnswers',
   MultipleChoiceAnswer,
 )
 
 const Content = ArrayNode('content', ParagraphType)
 
 const MultipleChoiceExerciseType = ObjectNode(
-  'multiple-choice',
+  'multipleChoiceExercise',
   {
-    type: LiteralNode('multiple-choice'),
+    type: LiteralNode('multipleChoiceExercise'),
     exercise: Content,
     answers: MultipleChoiceAnswers,
   },
@@ -521,7 +521,7 @@ function UnionNode<
 }
 
 const DocumentItemType = UnionNode(
-  'document.item',
+  'documentItem',
   [ParagraphType, MultipleChoiceExerciseType],
   (json) => json.type,
 )
@@ -569,7 +569,7 @@ const initialValue: Spec<AppRootType>['JSONValue'] = [
     value: 'This is a simple rich text editor built with React and Rsbuild.',
   },
   {
-    type: 'multiple-choice',
+    type: 'multipleChoiceExercise',
     exercise: [{ type: 'paragraph', value: 'What is the capital of France?' }],
     answers: [
       { isCorrect: false, text: 'Berlin' },
