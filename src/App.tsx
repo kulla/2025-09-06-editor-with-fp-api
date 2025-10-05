@@ -347,7 +347,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
 ): NodeType<{
   TypeName: T
   FlatValue: [keyof C & string, Key][]
-  JSONValue: { [K in keyof C]: C[K]['JSONValue'] } & { type: T }
+  JSONValue: { [K in keyof C]: C[K]['JSONValue'] }
 }> {
   const isValidFlatValue = isArrayOf(isTupleOf(isString, isKey))
   const getChildren = (store: EditorStore, node: Key) =>
@@ -394,9 +394,10 @@ const MultipleChoiceAnswers = ArrayNode(
 
 const Content = ArrayNode('content', ParagraphType)
 
-const MultipleChoiceExercise = ObjectNode(
+const MultipleChoiceExerciseType = ObjectNode(
   'multiple-choice',
   {
+    type: LiteralNode('multiple-choice'),
     exercise: Content,
     answers: MultipleChoiceAnswers,
   },
