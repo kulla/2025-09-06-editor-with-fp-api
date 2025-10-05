@@ -401,6 +401,55 @@ const MultipleChoiceExerciseType = ObjectNode(
   ['exercise', 'answers'],
 )
 
+function UnionNode<
+  T extends string,
+  C extends [NodeType, NodeType, ...NodeType[]],
+>(
+  typeName: T,
+  childTypes: C,
+  getTypeName: (json: Spec<C[number]>['JSONValue']) => C[number]['typeName'],
+): NodeType<{
+  TypeName: T
+  FlatValue: Key
+  JSONValue: Spec<C[number]>['JSONValue']
+}> {
+  function getChildType(childTypeName: string) {
+    const childType = childTypes.find((ct) => ct.typeName === childTypeName)
+
+    invariant(childType, 'No matching child type found')
+
+    return childType
+  }
+
+  return {
+    typeName,
+
+    isValidFlatValue: isKey,
+
+    toJsonValue(store, key) {
+      const childKey = store.getValue(isKey, key)
+      const childType = getChildType(store.getTypeName(childKey))
+
+      return childType.toJsonValue(store, childKey)
+    },
+
+    store(tx, json, parentKey) {
+      const childType = getChildType(getTypeName(json))
+
+      return tx.insert(typeName, parentKey, (key) =>
+        childType.store(tx, json, key),
+      )
+    },
+  }
+}
+
+const DocumentItemType = UnionNode(
+  'document.item',
+  [ParagraphType, MultipleChoiceExerciseType],
+  (json) => json.type,
+)
+const DocumentType = ArrayNode('document', DocumentItemType)
+
 function RootType<C extends NodeSpec>(
   childType: NodeType<C>,
 ): NodeType<{
@@ -426,12 +475,21 @@ function RootType<C extends NodeSpec>(
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(Content)
+const AppRootType = RootType(DocumentType)
 const initialValue: Spec<AppRootType>['JSONValue'] = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
     type: 'paragraph',
     value: 'This is a simple rich text editor built with React and Rsbuild.',
+  },
+  {
+    type: 'multiple-choice',
+    exercise: [{ type: 'paragraph', value: 'What is the capital of France?' }],
+    answers: [
+      { isCorrect: false, text: 'Berlin' },
+      { isCorrect: true, text: 'Paris' },
+      { isCorrect: false, text: 'Madrid' },
+    ],
   },
 ]
 const rootKey: Key = 'root'
