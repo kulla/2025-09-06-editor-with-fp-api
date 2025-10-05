@@ -15,17 +15,17 @@ function getSingletonYDoc() {
   return ydoc
 }
 
-type NonRootKey = `${number}`
-type RootKey = 'root'
-type Key = RootKey | NonRootKey
+type Key = `${number}` | 'root'
+
+function isKey(value: unknown): value is Key {
+  return (
+    typeof value === 'string' &&
+    (value === 'root' || /^[1-9][0-9]*$/.test(value))
+  )
+}
 
 type PrimitiveValue = string | number | boolean
-type FlatValue =
-  | PrimitiveValue
-  | Y.Text
-  | NonRootKey
-  | NonRootKey[]
-  | Record<string, NonRootKey>
+type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | Record<string, Key>
 
 interface Transaction {
   update<F extends FlatValue>(
@@ -33,12 +33,12 @@ interface Transaction {
     key: Key,
     updateFn: F | ((current: F) => F),
   ): void
-  attachRoot(rootKey: RootKey, value: NonRootKey): void
+  attachRoot(rootKey: Key, value: Key): Key
   insert<T extends string>(
     typeName: T,
     parentKey: Key,
-    createValue: (key: NonRootKey) => FlatValue,
-  ): NonRootKey
+    createValue: (key: Key) => FlatValue,
+  ): Key
 }
 
 export class EditorStore {
@@ -139,6 +139,8 @@ export class EditorStore {
 
         this.values.set(rootKey, value)
         this.typeNames.set(rootKey, 'root')
+
+        return rootKey
       },
       insert: (typeName, parentKey, createValue) => {
         const newKey = this.generateNextKey()
@@ -157,7 +159,7 @@ export class EditorStore {
     this.state.set('updateCount', this.updateCount + 1)
   }
 
-  private generateNextKey(): NonRootKey {
+  private generateNextKey(): Key {
     this.lastKeyNumber += 1
 
     return `${this.lastKeyNumber}`
@@ -186,123 +188,41 @@ export function useEditorStore() {
   )
 }
 
-interface FlatNode {
-  store: EditorStore
-  key: Key
-}
-
 interface NodeSpec {
   TypeName: string
-  Key: Key
-  ParentKey: Key | null
   FlatValue: FlatValue
-  JSONValue: Record<string, unknown> | unknown[] | PrimitiveValue
-}
-
-interface FlatNode<S extends NodeSpec> {
-  store: EditorStore
-  key: S['Key']
+  JSONValue: unknown
 }
 
 interface NodeType<S extends NodeSpec = NodeSpec> {
   typeName: S['TypeName']
-  getFlatValue(node: FlatNode<S>): S['FlatValue']
-  getParentKey(node: FlatNode<S>): S['ParentKey']
   isValidFlatValue(value: FlatValue): value is S['FlatValue']
-  toJsonValue(node: FlatNode<S>): S['JSONValue']
-  __spec__(): S
+  toJsonValue(store: EditorStore, key: Key): S['JSONValue']
+  store(tx: Transaction, json: S['JSONValue'], key: Key): Key
 }
 
-type Abstract<T extends object> = {
-  [K in keyof T]?: T[K] extends (...args: infer A) => infer R
-    ? (this: T, ...args: A) => R
-    : T[K]
-}
+type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
 
-function AbstractNode<S extends NodeSpec>() {
-  return {
-    __spec__() {
-      throw new Error('This function should not be called')
-    },
-
-    getFlatValue({ store, key }) {
-      return store.getValue(this.isValidFlatValue, key)
-    },
-
-    getParentKey({ store, key }) {
-      return store.getParentKey(key)
-    },
-  } satisfies Abstract<NodeType<S>>
-}
-
-type Spec<N extends { __spec__: () => NodeSpec }> = ReturnType<N['__spec__']>
-
-type NonRootSpecValue = Omit<NodeSpec, 'Key' | 'ParentKey'>
-type NonRootSpec<S extends NonRootSpecValue = NonRootSpecValue> = S & {
-  Key: NonRootKey<S['TypeName']>
-  ParentKey: Key
-}
-
-function NonRootNode<S extends NonRootSpec>() {
-  const Base = AbstractNode<S>()
-
-  return {
-    ...Base,
-
-    getParentKey(node) {
-      const parentKey = Base.getParentKey.call(this, node)
-
-      invariant(parentKey != null, 'Non-root node must have a parent key')
-
-      return parentKey
-    },
-  } satisfies Abstract<NodeType<S>>
-}
-
-interface NonRootType<S extends NonRootSpec = NonRootSpec> extends NodeType<S> {
-  getParentKey(node: FlatNode<S>): S['ParentKey']
-  storeNonRoot(
-    jsonValue: S['JSONValue'],
-    tx: Transaction,
-    parentKey: S['ParentKey'],
-  ): S['Key']
-}
-
-type TextSpec = NonRootSpec<{
+const TextType: NodeType<{
   TypeName: 'text'
   FlatValue: Y.Text
   JSONValue: string
-}>
-
-const TextType: NonRootType<TextSpec> = {
+  ParentKey: Key
+}> = {
   typeName: 'text' as const,
 
-  ...NonRootNode<TextSpec>(),
+  isValidFlatValue: (value) => value instanceof Y.Text,
 
-  isValidFlatValue(value) {
-    return value instanceof Y.Text
+  toJsonValue(store, key) {
+    return store.getValue(this.isValidFlatValue, key).toString()
   },
 
-  toJsonValue(node) {
-    return this.getFlatValue(node).toString()
-  },
-
-  storeNonRoot(jsonValue, tx, parentKey) {
-    return tx.insert('text', parentKey, () => new Y.Text(jsonValue))
+  store(tx, json, parentKey) {
+    return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
   },
 }
 
-type WrappedNodeSpec<T extends string, C extends NonRootSpec> = NonRootSpec<{
-  TypeName: T
-  FlatValue: NonRootKey<C['TypeName']>
-  JSONValue: { type: T; value: C['JSONValue'] }
-}>
-
-interface WrappedNodeType<T extends string, C extends NonRootSpec>
-  extends NonRootType<WrappedNodeSpec<T, C>> {
-  getChild(node: FlatNode<WrappedNodeSpec<T, C>>): FlatNode<C>
-}
-
+/*
 function WrappedNode<T extends string, C extends NonRootType>(
   typeName: T,
   childType: C,
@@ -385,54 +305,36 @@ function ArrayNode<T extends string, C extends NonRootType>(
 
 const ContentType = ArrayNode('content', ParagraphType)
 
-interface RootSpec<C extends NonRootSpec> extends NodeSpec {
+*/
+
+function RootType<C extends NodeSpec>(
+  childType: NodeType<C>,
+): NodeType<{
   TypeName: 'root'
-  Key: RootKey
-  FlatValue: NonRootKey<C['TypeName']>
+  FlatValue: Key
   JSONValue: C['JSONValue']
-}
-
-interface RootType<C extends NonRootSpec> extends NodeType<RootSpec<C>> {
-  storeRoot(
-    jsonValue: RootSpec<C>['JSONValue'],
-    tx: Transaction,
-    rootKey: RootKey,
-  ): void
-}
-
-function RootType<C extends NonRootType>(childType: C): RootType<Spec<C>> {
+  ParentKey: null
+}> {
   return {
     typeName: 'root' as const,
 
-    ...AbstractNode<RootSpec<Spec<C>>>(),
+    isValidFlatValue: isKey,
 
-    getParentKey() {
-      return null
+    toJsonValue(store, key) {
+      const value = store.getValue(this.isValidFlatValue, key)
+      return childType.toJsonValue(store, value)
     },
 
-    isValidFlatValue(value) {
-      return isNonRootKey(value, childType.typeName)
-    },
-
-    toJsonValue(node) {
-      const value = this.getFlatValue(node)
-      return childType.toJsonValue({ store: node.store, key: value })
-    },
-
-    storeRoot(jsonValue, tx, rootKey) {
-      const flatValue = childType.storeNonRoot(jsonValue, tx, rootKey)
-
-      tx.attachRoot(rootKey, flatValue)
+    store(tx, json, rootKey) {
+      return tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
     },
   }
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(ContentType)
-const initialValue: Spec<AppRootType>['JSONValue'] = [
-  { type: 'paragraph', value: 'Hello, Rsbuild!' },
-]
-const rootKey: RootKey = 'root'
+const AppRootType = RootType(TextType)
+const initialValue: Spec<AppRootType>['JSONValue'] = 'Hello, Rsbuild!'
+const rootKey: Key = 'root'
 
 export default function App() {
   const { store } = useEditorStore()
@@ -441,7 +343,7 @@ export default function App() {
     setTimeout(() => {
       if (store.has(rootKey)) return
 
-      store.update((tx) => AppRootType.storeRoot(initialValue, tx, 'root'))
+      store.update((tx) => AppRootType.store(tx, initialValue, rootKey))
     }, 1000)
   }, [store])
 
@@ -464,7 +366,7 @@ export default function App() {
           json: () => {
             if (!store.has(rootKey)) return ''
 
-            const jsonValue = AppRootType.toJsonValue({ store, key: rootKey })
+            const jsonValue = AppRootType.toJsonValue(store, rootKey)
             return JSON.stringify(jsonValue, null, 2)
           },
         }}
