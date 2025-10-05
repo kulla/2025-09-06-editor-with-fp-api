@@ -256,18 +256,6 @@ function WrappedNode<T extends string, C extends NodeSpec>(
 
 const ParagraphType = WrappedNode('paragraph', TextType)
 
-/*
-type ArrayNodeSpec<T extends string, C extends NonRootSpec> = NonRootSpec<{
-  TypeName: T
-  FlatValue: NonRootKey<C['TypeName']>[]
-  JSONValue: C['JSONValue'][]
-}>
-
-interface ArrayNodeType<T extends string, C extends NonRootSpec>
-  extends NonRootType<ArrayNodeSpec<T, C>> {
-  getChildren(node: FlatNode<ArrayNodeSpec<T, C>>): FlatNode<C>[]
-}
-
 function isArrayOf<C>(
   value: unknown,
   itemValidator: (v: unknown) => v is C,
@@ -275,38 +263,36 @@ function isArrayOf<C>(
   return Array.isArray(value) && value.every(itemValidator)
 }
 
-function ArrayNode<T extends string, C extends NonRootType>(
+function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
-  childType: C,
-): ArrayNodeType<T, Spec<C>> {
+  childType: NodeType<C>,
+): NodeType<{ TypeName: T; FlatValue: Key[]; JSONValue: C['JSONValue'][] }> {
+  const isValidFlatValue = (value: FlatValue): value is Key[] =>
+    isArrayOf(value, isKey)
+
+  const getChildren = (store: EditorStore, node: Key) =>
+    store.getValue(isValidFlatValue, node)
+
   return {
     typeName,
 
-    ...NonRootNode<ArrayNodeSpec<T, Spec<C>>>(),
+    isValidFlatValue: (value) => isArrayOf(value, isKey),
 
-    isValidFlatValue(value) {
-      return isArrayOf(value, (v) => isNonRootKey(v, childType.typeName))
+    toJsonValue(store, key) {
+      return getChildren(store, key).map((child) =>
+        childType.toJsonValue(store, child),
+      )
     },
 
-    toJsonValue(node) {
-      return this.getChildren(node).map((child) => childType.toJsonValue(child))
-    },
-
-    getChildren(node) {
-      return this.getFlatValue(node).map((key) => ({ store: node.store, key }))
-    },
-
-    storeNonRoot(jsonValue, tx, parentKey) {
+    store(tx, json, parentKey) {
       return tx.insert(typeName, parentKey, (key) =>
-        jsonValue.map((item) => childType.storeNonRoot(item, tx, key)),
+        json.map((item) => childType.store(tx, item, key)),
       )
     },
   }
 }
 
 const ContentType = ArrayNode('content', ParagraphType)
-
-*/
 
 function RootType<C extends NodeSpec>(
   childType: NodeType<C>,
@@ -333,11 +319,14 @@ function RootType<C extends NodeSpec>(
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(ParagraphType)
-const initialValue: Spec<AppRootType>['JSONValue'] = {
-  type: 'paragraph',
-  value: 'Hello, Rsbuild!',
-}
+const AppRootType = RootType(ContentType)
+const initialValue: Spec<AppRootType>['JSONValue'] = [
+  { type: 'paragraph', value: 'Hello, Rsbuild!' },
+  {
+    type: 'paragraph',
+    value: 'This is a simple rich text editor built with React and Rsbuild.',
+  },
+]
 const rootKey: Key = 'root'
 
 export default function App() {
