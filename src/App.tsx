@@ -24,12 +24,13 @@ function isKey(value: unknown): value is Key {
   )
 }
 
+type Guard<T> = (value: unknown) => value is T
 type PrimitiveValue = string | number | boolean
 type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | Record<string, Key>
 
 interface Transaction {
   update<F extends FlatValue>(
-    validator: (value: FlatValue) => value is F,
+    guard: Guard<F>,
     key: Key,
     updateFn: F | ((current: F) => F),
   ): void
@@ -196,7 +197,7 @@ interface NodeSpec {
 
 interface NodeType<S extends NodeSpec = NodeSpec> {
   typeName: S['TypeName']
-  isValidFlatValue(value: FlatValue): value is S['FlatValue']
+  isValidFlatValue: Guard<S['FlatValue']>
   toJsonValue(store: EditorStore, key: Key): S['JSONValue']
   // TODO: Here the definition of "key" differs for root and non-root nodes
   store(tx: Transaction, json: S['JSONValue'], key: Key): Key
@@ -275,9 +276,9 @@ function WrappedNode<T extends string, C extends NodeSpec>(
 const ParagraphType = WrappedNode('paragraph', TextType)
 
 const isArrayOf =
-  <C,>(itemValidator: (v: unknown) => v is C) =>
-  (value: unknown): value is C[] =>
-    Array.isArray(value) && value.every(itemValidator)
+  <C,>(itemGuard: Guard<C>): Guard<C[]> =>
+  (value) =>
+    Array.isArray(value) && value.every(itemGuard)
 
 function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
