@@ -198,6 +198,7 @@ interface NodeType<S extends NodeSpec = NodeSpec> {
   typeName: S['TypeName']
   isValidFlatValue(value: FlatValue): value is S['FlatValue']
   toJsonValue(store: EditorStore, key: Key): S['JSONValue']
+  // TODO: Here the definition of "key" differs for root and non-root nodes
   store(tx: Transaction, json: S['JSONValue'], key: Key): Key
 }
 
@@ -222,33 +223,32 @@ const TextType: NodeType<{
   },
 }
 
-/*
-function WrappedNode<T extends string, C extends NonRootType>(
+function WrappedNode<T extends string, C extends NodeSpec>(
   typeName: T,
-  childType: C,
-): WrappedNodeType<T, Spec<C>> {
+  childType: NodeType<C>,
+): NodeType<{
+  TypeName: T
+  FlatValue: Key
+  JSONValue: { type: T; value: C['JSONValue'] }
+}> {
+  function getChild(store: EditorStore, key: Key) {
+    return store.getValue(isKey, key)
+  }
+
   return {
     typeName,
 
-    ...NonRootNode<WrappedNodeSpec<T, Spec<C>>>(),
+    isValidFlatValue: isKey,
 
-    isValidFlatValue(value) {
-      return isNonRootKey(value, childType.typeName)
-    },
-
-    toJsonValue(node) {
-      const value = childType.toJsonValue(this.getChild(node))
+    toJsonValue(store, key) {
+      const value = childType.toJsonValue(store, getChild(store, key))
 
       return { type: typeName, value }
     },
 
-    getChild(node) {
-      return { store: node.store, key: this.getFlatValue(node) }
-    },
-
-    storeNonRoot(jsonValue, tx, parentKey) {
+    store(tx, { value }, parentKey) {
       return tx.insert(typeName, parentKey, (key) =>
-        childType.storeNonRoot(jsonValue.value, tx, key),
+        childType.store(tx, value, key),
       )
     },
   }
@@ -256,6 +256,7 @@ function WrappedNode<T extends string, C extends NonRootType>(
 
 const ParagraphType = WrappedNode('paragraph', TextType)
 
+/*
 type ArrayNodeSpec<T extends string, C extends NonRootSpec> = NonRootSpec<{
   TypeName: T
   FlatValue: NonRootKey<C['TypeName']>[]
@@ -332,8 +333,11 @@ function RootType<C extends NodeSpec>(
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(TextType)
-const initialValue: Spec<AppRootType>['JSONValue'] = 'Hello, Rsbuild!'
+const AppRootType = RootType(ParagraphType)
+const initialValue: Spec<AppRootType>['JSONValue'] = {
+  type: 'paragraph',
+  value: 'Hello, Rsbuild!',
+}
 const rootKey: Key = 'root'
 
 export default function App() {
