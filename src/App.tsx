@@ -1,10 +1,11 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant } from 'es-toolkit'
+import { invariant, isBoolean, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
+import { type Guard, isArrayOf, isTupleOf } from './guards'
 
 let ydoc: Y.Doc | null = null
 
@@ -24,7 +25,6 @@ function isKey(value: unknown): value is Key {
   )
 }
 
-type Guard<T> = (value: unknown) => value is T
 type PrimitiveValue = string | number | boolean
 type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | [string, Key][]
 
@@ -206,8 +206,6 @@ interface NodeType<S extends NodeSpec = NodeSpec> {
 
 type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
 
-const isBoolean: Guard<boolean> = (value) => typeof value === 'boolean'
-
 const BooleanType: NodeType<{
   TypeName: 'boolean'
   FlatValue: boolean
@@ -316,11 +314,6 @@ function WrappedNode<T extends string, C extends NodeSpec>(
 
 const ParagraphType = WrappedNode('paragraph', TextType, { HtmlTag: 'p' })
 
-const isArrayOf =
-  <C,>(itemGuard: Guard<C>): Guard<C[]> =>
-  (value) =>
-    Array.isArray(value) && value.every(itemGuard)
-
 function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
   childType: NodeType<C>,
@@ -385,16 +378,6 @@ function LiteralNode<V extends PrimitiveValue>(
     },
   }
 }
-
-const isString: Guard<string> = (value) => typeof value === 'string'
-
-const isTupleOf =
-  <C, D>(guard1: Guard<C>, guard2: Guard<D>): Guard<[C, D]> =>
-  (value): value is [C, D] =>
-    Array.isArray(value) &&
-    value.length === 2 &&
-    guard1(value[0]) &&
-    guard2(value[1])
 
 function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   typeName: T,
