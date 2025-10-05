@@ -201,6 +201,7 @@ interface NodeType<S extends NodeSpec = NodeSpec> {
   toJsonValue(store: EditorStore, key: Key): S['JSONValue']
   // TODO: Here the definition of "key" differs for root and non-root nodes
   store(tx: Transaction, json: S['JSONValue'], key: Key): Key
+  render(store: EditorStore, key: Key): React.ReactNode
 }
 
 type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
@@ -223,6 +224,25 @@ const BooleanType: NodeType<{
   store(tx, json, parentKey) {
     return tx.insert(this.typeName, parentKey, () => json)
   },
+
+  render(store, key) {
+    const currentValue = store.getValue(this.isValidFlatValue, key)
+
+    return (
+      <input
+        key={key}
+        id={key}
+        data-key={key}
+        type="checkbox"
+        checked={currentValue}
+        onChange={(e) => {
+          store.update((tx) => {
+            tx.update(this.isValidFlatValue, key, e.target.checked)
+          })
+        }}
+      />
+    )
+  },
 }
 
 const TextType: NodeType<{
@@ -242,11 +262,22 @@ const TextType: NodeType<{
   store(tx, json, parentKey) {
     return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
   },
+
+  render(store, key) {
+    const text = store.getValue(this.isValidFlatValue, key)
+
+    return (
+      <span key={key} id={key} data-key={key}>
+        {text.toString()}
+      </span>
+    )
+  },
 }
 
 function WrappedNode<T extends string, C extends NodeSpec>(
   typeName: T,
   childType: NodeType<C>,
+  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
 ): NodeType<{
   TypeName: T
   FlatValue: Key
@@ -272,10 +303,18 @@ function WrappedNode<T extends string, C extends NodeSpec>(
         childType.store(tx, value, key),
       )
     },
+
+    render(store, key) {
+      return (
+        <HtmlTag key={key} id={key} data-key={key}>
+          {childType.render(store, getChild(store, key))}
+        </HtmlTag>
+      )
+    },
   }
 }
 
-const ParagraphType = WrappedNode('paragraph', TextType)
+const ParagraphType = WrappedNode('paragraph', TextType, { HtmlTag: 'p' })
 
 const isArrayOf =
   <C,>(itemGuard: Guard<C>): Guard<C[]> =>
@@ -285,6 +324,7 @@ const isArrayOf =
 function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
   childType: NodeType<C>,
+  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
 ): NodeType<{ TypeName: T; FlatValue: Key[]; JSONValue: C['JSONValue'][] }> {
   const isValidFlatValue = isArrayOf(isKey)
 
@@ -307,6 +347,18 @@ function ArrayNode<T extends string, C extends NodeSpec>(
         json.map((item) => childType.store(tx, item, key)),
       )
     },
+
+    render(store, key) {
+      const children = getChildren(store, key).map((childKey) =>
+        childType.render(store, childKey),
+      )
+
+      return (
+        <HtmlTag key={key} id={key} data-key={key}>
+          {children}
+        </HtmlTag>
+      )
+    },
   }
 }
 
@@ -327,6 +379,10 @@ function LiteralNode<V extends PrimitiveValue>(
     store(tx, json, parentKey) {
       return tx.insert(typeName, parentKey, () => json)
     },
+
+    render() {
+      return null
+    },
   }
 }
 
@@ -344,6 +400,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   typeName: T,
   childTypes: { [K in keyof C]: NodeType<C[K]> },
   keyOrder: (keyof C)[],
+  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
 ): NodeType<{
   TypeName: T
   FlatValue: [keyof C & string, Key][]
@@ -374,6 +431,19 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
           return [prop, childKey] as [keyof C & string, Key]
         })
       })
+    },
+
+    render(store, key) {
+      const children = getChildren(store, key).map(([prop, childKey]) => {
+        const childType = childTypes[prop]
+        return childType.render(store, childKey)
+      })
+
+      return (
+        <HtmlTag key={key} id={key} data-key={key}>
+          {children}
+        </HtmlTag>
+      )
     },
   }
 }
@@ -440,6 +510,13 @@ function UnionNode<
         childType.store(tx, json, key),
       )
     },
+
+    render(store, key) {
+      const childKey = store.getValue(isKey, key)
+      const childType = getChildType(store.getTypeName(childKey))
+
+      return childType.render(store, childKey)
+    },
   }
 }
 
@@ -470,6 +547,15 @@ function RootType<C extends NodeSpec>(
 
     store(tx, json, rootKey) {
       return tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
+    },
+
+    render(store, key) {
+      const childKey = store.getValue(this.isValidFlatValue, key)
+      return (
+        <article key={key} id={key} data-key={key}>
+          {childType.render(store, childKey)}
+        </article>
+      )
     },
   }
 }
@@ -507,8 +593,12 @@ export default function App() {
 
   return (
     <main className="p-10">
-      <h1>Rsbuild with React</h1>
-      <p>Start building amazing things with Rsbuild.</p>
+      <h1>Editor</h1>
+      {store.has(rootKey) ? (
+        AppRootType.render(store, rootKey)
+      ) : (
+        <p>Loading editor...</p>
+      )}
       <DebugPanel
         labels={{
           entries: 'Internal editor store',
