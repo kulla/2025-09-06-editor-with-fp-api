@@ -380,10 +380,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
 
 const MultipleChoiceAnswer = ObjectNode(
   'multiple-choice.answers.item',
-  {
-    isCorrect: BooleanType,
-    text: TextType,
-  },
+  { isCorrect: BooleanType, text: TextType },
   ['isCorrect', 'text'],
 )
 
