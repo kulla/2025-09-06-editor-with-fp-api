@@ -263,7 +263,7 @@ interface NonRootNodeType<J = unknown, F = FlatValue> extends NodeType<J, F> {
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 
-function createNonRoot<J, F extends FlatValue>() {
+function createNonRootNode<J, F extends FlatValue>() {
   return createNode<J, F>()
     .extendType<NonRootNodeType<J, F>>()
     .extend((Base) => ({
@@ -277,7 +277,7 @@ function createNonRoot<J, F extends FlatValue>() {
     }))
 }
 
-const TextType = createNonRoot<string, Y.Text>()
+const TextNode = createNonRootNode<string, Y.Text>()
   .extend({
     isValidFlatValue: (value) => value instanceof Y.Text,
 
@@ -299,8 +299,8 @@ const TextType = createNonRoot<string, Y.Text>()
   })
   .finish('text')
 
-function createPrimitive<V extends PrimitiveValue>(guard: Guard<V>) {
-  return createNonRoot<V, V>()
+function createPrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
+  return createNonRootNode<V, V>()
     .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
     .extend({
       isValidFlatValue: guard,
@@ -319,7 +319,7 @@ function createPrimitive<V extends PrimitiveValue>(guard: Guard<V>) {
     })
 }
 
-const StringType = createPrimitive(isString)
+const StringNode = createPrimitiveNode(isString)
   .extend({
     render(store, key) {
       return (
@@ -340,7 +340,7 @@ const StringType = createPrimitive(isString)
   })
   .finish('string')
 
-const NumberType = createPrimitive(isNumber)
+const NumberNode = createPrimitiveNode(isNumber)
   .extend({
     render(store, key) {
       return (
@@ -365,7 +365,7 @@ const NumberType = createPrimitive(isNumber)
   })
   .finish('number')
 
-const BooleanType = createPrimitive(isBoolean)
+const BooleanNode = createPrimitiveNode(isBoolean)
   .extend({
     render(store, key) {
       const currentValue = this.getFlatValue(store, key)
@@ -389,7 +389,7 @@ const BooleanType = createPrimitive(isBoolean)
   .finish('boolean')
 
 function createLiteralNode<T extends PrimitiveValue>(value: T) {
-  return createPrimitive((v): v is T => v === value).extend({
+  return createPrimitiveNode((v): v is T => v === value).extend({
     render() {
       return null
     },
@@ -400,7 +400,7 @@ function createWrappedNode<T extends string, CJ>(
   typeName: T,
   childType: NonRootNodeType<CJ, FlatValue>,
 ) {
-  return createNonRoot<{ type: T; value: CJ }, NonRootKey>()
+  return createNonRootNode<{ type: T; value: CJ }, NonRootKey>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isNonRootKey,
@@ -433,12 +433,12 @@ function createWrappedNode<T extends string, CJ>(
     })
 }
 
-const ParagraphType = createWrappedNode('paragraph', TextType)
+const ParagraphNode = createWrappedNode('paragraph', TextNode)
   .extend({ HtmlTag: 'p' })
   .finish('paragraph')
 
 function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
-  return createNonRoot<CJ[], NonRootKey[]>()
+  return createNonRootNode<CJ[], NonRootKey[]>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isArrayOf(isNonRootKey),
@@ -475,7 +475,7 @@ function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
     })
 }
 
-const Content = createArrayNode(ParagraphType).finish('content')
+const ContentNode = createArrayNode(ParagraphNode).finish('content')
 
 function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   typeName: T,
@@ -531,7 +531,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
 
 const MultipleChoiceAnswerType = ObjectNode(
   'multipleChoiceAnswer',
-  { isCorrect: BooleanType, text: TextType },
+  { isCorrect: BooleanNode, text: TextNode },
   ['isCorrect', 'text'],
 )
 
@@ -544,7 +544,7 @@ const MultipleChoiceExerciseType = ObjectNode(
   'multipleChoiceExercise',
   {
     type: createLiteralNode('multipleChoiceExercise'),
-    exercise: Content,
+    exercise: ContentNode,
     answers: MultipleChoiceAnswersType,
   },
   ['exercise', 'answers'],
@@ -601,7 +601,7 @@ function UnionNode<
 
 const DocumentItemType = UnionNode(
   'documentItem',
-  [ParagraphType, MultipleChoiceExerciseType],
+  [ParagraphNode, MultipleChoiceExerciseType],
   (json) => json.type,
 )
 const DocumentType = createArrayNode('document', DocumentItemType)
