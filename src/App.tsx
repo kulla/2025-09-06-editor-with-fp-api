@@ -1,6 +1,6 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant, isBoolean, isString } from 'es-toolkit'
+import { invariant, isBoolean, isString, merge } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { O } from 'ts-toolbelt'
@@ -185,13 +185,6 @@ export function useEditorStore() {
   )
 }
 
-function mergeRight<A extends object, B extends object>(
-  a: A,
-  b: B,
-): O.Merge<A, B> {
-  return { ...a, ...b } as O.Merge<A, B>
-}
-
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
     ? (this: T, ...args: A) => R
@@ -204,7 +197,9 @@ class TypeBuilder<T extends object, I extends object> {
   extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
     const newImpl = typeof ext === 'function' ? ext(this.impl) : ext
 
-    return new TypeBuilder<T, O.Merge<I, I2>>(mergeRight(this.impl, newImpl))
+    return new TypeBuilder<T, O.Merge<I, I2>>(
+      merge(this.impl, newImpl) as O.Merge<I, I2>,
+    )
   }
 
   extendType<T2 extends object>() {
