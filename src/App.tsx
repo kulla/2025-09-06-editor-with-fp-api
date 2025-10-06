@@ -301,21 +301,27 @@ const TextType = NonRoot<Y.Text, string>()
   })
   .finish('text')
 
-function PrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
-  return NonRoot<V, V>().extend({
-    isValidFlatValue: guard,
+function createPrimitive<V extends PrimitiveValue>(guard: Guard<V>) {
+  return NonRoot<V, V>()
+    .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
+    .extend({
+      isValidFlatValue: guard,
 
-    toJsonValue(store, key) {
-      return this.getFlatValue(store, key)
-    },
+      toJsonValue(store, key) {
+        return this.getFlatValue(store, key)
+      },
 
-    store(tx, json, parentKey) {
-      return tx.insert(this.typeName, parentKey, () => json)
-    },
-  })
+      updateValue(tx, key, newValue) {
+        tx.update(this.isValidFlatValue, key, newValue)
+      },
+
+      store(tx, json, parentKey) {
+        return tx.insert(this.typeName, parentKey, () => json)
+      },
+    })
 }
 
-const StringType = PrimitiveNode(isString)
+const StringType = createPrimitive(isString)
   .extend({
     render(store, key) {
       return (
@@ -327,7 +333,7 @@ const StringType = PrimitiveNode(isString)
           value={this.getFlatValue(store, key)}
           onChange={(e) => {
             store.update((tx) => {
-              tx.update(this.isValidFlatValue, key, e.target.value)
+              this.updateValue(tx, key, e.target.value)
             })
           }}
         />
@@ -336,7 +342,7 @@ const StringType = PrimitiveNode(isString)
   })
   .finish('string')
 
-const NumberType = PrimitiveNode(isNumber)
+const NumberType = createPrimitive(isNumber)
   .extend({
     render(store, key) {
       return (
@@ -352,7 +358,7 @@ const NumberType = PrimitiveNode(isNumber)
             if (Number.isNaN(newValue)) return
 
             store.update((tx) => {
-              tx.update(this.isValidFlatValue, key, newValue)
+              this.updateValue(tx, key, newValue)
             })
           }}
         />
@@ -361,7 +367,7 @@ const NumberType = PrimitiveNode(isNumber)
   })
   .finish('number')
 
-const BooleanType = PrimitiveNode(isBoolean)
+const BooleanType = createPrimitive(isBoolean)
   .extend({
     render(store, key) {
       const currentValue = this.getFlatValue(store, key)
@@ -375,7 +381,7 @@ const BooleanType = PrimitiveNode(isBoolean)
           checked={currentValue}
           onChange={(e) => {
             store.update((tx) => {
-              tx.update(this.isValidFlatValue, key, e.target.checked)
+              this.updateValue(tx, key, e.target.checked)
             })
           }}
         />
