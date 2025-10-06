@@ -477,78 +477,96 @@ function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
 
 const ContentNode = createArrayNode(ParagraphNode).finish('content')
 
-function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
-  typeName: T,
-  childTypes: { [K in keyof C]: NodeType<C[K]> },
+const isKeyOf =
+  <C extends Record<string, unknown>>(obj: C): Guard<keyof C> =>
+  (value: unknown): value is keyof C =>
+    typeof value === 'string' && value in obj
+
+const isIntersectionOf =
+  <A, B>(guardA: Guard<A>, guardB: Guard<B>): Guard<A & B> =>
+  (value): value is A & B =>
+    guardA(value) && guardB(value)
+
+function createObjectNode<C extends Record<string, NonRootNodeType>>(
+  childTypes: C,
   keyOrder: (keyof C)[],
-  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
-): NodeType<{
-  TypeName: T
-  FlatValue: [keyof C & string, NonRootKey][]
-  JSONValue: { [K in keyof C]: C[K]['JSONValue'] }
-}> {
-  const isValidFlatValue = isArrayOf(isTupleOf(isString, isNonRootKey))
-  const getChildren = (store: EditorStore, node: Key) =>
-    store.getValue(isValidFlatValue, node)
+) {
+  return createNonRootNode<
+    { [K in keyof C]: JSONValue<C[K]> },
+    [keyof C & string, NonRootKey][]
+  >()
+    .extendType<{ HtmlTag: React.ElementType }>()
+    .extend({
+      isValidFlatValue: isArrayOf(
+        isTupleOf(
+          isIntersectionOf(isString, isKeyOf(childTypes)),
+          isNonRootKey,
+        ),
+      ),
 
-  return {
-    typeName,
+      HtmlTag: 'div',
 
-    isValidFlatValue,
+      toJsonValue(store, key) {
+        const props = this.getFlatValue(store, key).map(([prop, childKey]) => {
+          const childType = childTypes[prop]
 
-    toJsonValue(store, key) {
-      const props = getChildren(store, key).map(([prop, childKey]) => {
-        return [prop, childTypes[prop].toJsonValue(store, childKey)]
-      })
-
-      return { ...Object.fromEntries(props), type: typeName }
-    },
-
-    store(tx, json, parentKey) {
-      return tx.insert(typeName, parentKey, (key) => {
-        return keyOrder.map((prop) => {
-          const childKey = childTypes[prop].store(tx, json[prop], key)
-
-          return [prop, childKey] as [keyof C & string, NonRootKey]
+          return [prop, childType.toJsonValue(store, childKey)]
         })
-      })
-    },
 
-    render(store, key) {
-      const children = getChildren(store, key).map(([prop, childKey]) => {
-        const childType = childTypes[prop]
-        return childType.render(store, childKey)
-      })
+        return Object.fromEntries(props) as {
+          [K in keyof C]: JSONValue<C[K]>
+        }
+      },
 
-      return (
-        <HtmlTag key={key} id={key} data-key={key} className={typeName}>
-          {children}
-        </HtmlTag>
-      )
-    },
-  }
+      store(tx, json, parentKey) {
+        return tx.insert(this.typeName, parentKey, (key) => {
+          return keyOrder.map((prop) => {
+            const childType = childTypes[prop]
+            const childKey = childType.store(tx, json[prop], key)
+
+            return [prop, childKey] as [keyof C & string, NonRootKey]
+          })
+        })
+      },
+
+      render(store, key) {
+        const HtmlTag = this.HtmlTag
+        const children = this.getFlatValue(store, key).map(
+          ([prop, childKey]) => {
+            const childType = childTypes[prop]
+
+            return childType.render(store, childKey)
+          },
+        )
+
+        return (
+          <HtmlTag key={key} id={key} data-key={key} className={this.typeName}>
+            {children}
+          </HtmlTag>
+        )
+      },
+    })
 }
 
-const MultipleChoiceAnswerType = ObjectNode(
-  'multipleChoiceAnswer',
+const MultipleChoiceAnswerNode = createObjectNode(
   { isCorrect: BooleanNode, text: TextNode },
   ['isCorrect', 'text'],
-)
+).finish('multipleChoiceAnswer')
 
-const MultipleChoiceAnswersType = createArrayNode(
-  'multipleChoiceAnswers',
-  MultipleChoiceAnswerType,
-)
+const MultipleChoiceAnswersNode = createArrayNode(
+  MultipleChoiceAnswerNode,
+).finish('multipleChoiceAnswers')
 
-const MultipleChoiceExerciseType = ObjectNode(
-  'multipleChoiceExercise',
+const MultipleChoiceExerciseNode = createObjectNode(
   {
-    type: createLiteralNode('multipleChoiceExercise'),
+    type: createLiteralNode('multipleChoiceExercise').finish(
+      'literal:multipleChoiceExercise',
+    ),
     exercise: ContentNode,
-    answers: MultipleChoiceAnswersType,
+    answers: MultipleChoiceAnswersNode,
   },
   ['exercise', 'answers'],
-)
+).finish('multipleChoiceExercise')
 
 function UnionNode<
   T extends string,
@@ -601,7 +619,7 @@ function UnionNode<
 
 const DocumentItemType = UnionNode(
   'documentItem',
-  [ParagraphNode, MultipleChoiceExerciseType],
+  [ParagraphNode, MultipleChoiceExerciseNode],
   (json) => json.type,
 )
 const DocumentType = createArrayNode('document', DocumentItemType)
