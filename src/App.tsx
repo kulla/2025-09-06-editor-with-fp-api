@@ -1,12 +1,11 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { O } from 'ts-toolbelt'
 import { invariant, isBoolean, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
-import { type Guard, isArrayOf, isTupleOf, isNumber } from './guards'
+import { type Guard, isArrayOf, isTupleOf } from './guards'
 import { getSingletonYDoc } from './store/ydoc'
 
 type RootKey = 'root'
