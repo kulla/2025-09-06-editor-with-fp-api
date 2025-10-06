@@ -388,6 +388,14 @@ const BooleanType = createPrimitive(isBoolean)
   })
   .finish('boolean')
 
+function createLiteralNode<T extends PrimitiveValue>(value: T) {
+  return createPrimitive((v): v is T => v === value).extend({
+    render() {
+      return null
+    },
+  })
+}
+
 function createWrappedNode<T extends string, CJ>(
   typeName: T,
   childType: NonRootNodeType<CJ, FlatValue>,
