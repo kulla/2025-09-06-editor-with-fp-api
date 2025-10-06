@@ -674,7 +674,7 @@ export default function App() {
           },
           entries: () => {
             const stringifyEntry = ([key, entry]: [string, unknown]) =>
-              `${padStart(key, 11)}: ${JSON.stringify(entry)}`
+              `${padStart(key, 4)}: ${JSON.stringify(entry)}`
 
             return store.getValueEntries().map(stringifyEntry).join('\n')
           },
