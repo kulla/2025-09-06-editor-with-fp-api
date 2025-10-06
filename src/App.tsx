@@ -3,6 +3,7 @@ import './App.css'
 import { invariant, isBoolean, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import type { O } from 'ts-toolbelt'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
 import { type Guard, isArrayOf, isTupleOf } from './guards'
@@ -184,16 +185,11 @@ export function useEditorStore() {
   )
 }
 
-type MergeRight<A, B> = {
-  [K in keyof A | keyof B]: K extends keyof B
-    ? B[K]
-    : K extends keyof A
-      ? A[K]
-      : never
-} & unknown
-
-function mergeRight<A, B>(a: A, b: B): MergeRight<A, B> {
-  return { ...a, ...b } as MergeRight<A, B>
+function mergeRight<A extends object, B extends object>(
+  a: A,
+  b: B,
+): O.Merge<A, B> {
+  return { ...a, ...b } as O.Merge<A, B>
 }
 
 type Abstract<T extends object> = {
@@ -208,11 +204,11 @@ class TypeBuilder<T extends object, I extends object> {
   extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
     const newImpl = typeof ext === 'function' ? ext(this.impl) : ext
 
-    return new TypeBuilder<T, MergeRight<I, I2>>(mergeRight(this.impl, newImpl))
+    return new TypeBuilder<T, O.Merge<I, I2>>(mergeRight(this.impl, newImpl))
   }
 
   extendType<T2 extends object>() {
-    return new TypeBuilder<MergeRight<T, T2>, I>(this.impl)
+    return new TypeBuilder<O.Merge<T, T2>, I>(this.impl)
   }
 
   finish(this: TypeBuilder<T, Omit<T, 'typeName'>>, typeName: string): T {
