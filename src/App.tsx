@@ -317,52 +317,6 @@ function createPrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
     })
 }
 
-const StringNode = createPrimitiveNode(isString)
-  .extend({
-    render(store, key) {
-      return (
-        <input
-          key={key}
-          id={key}
-          data-key={key}
-          type="text"
-          value={this.getFlatValue(store, key)}
-          onChange={(e) => {
-            store.update((tx) => {
-              this.updateValue(tx, key, e.target.value)
-            })
-          }}
-        />
-      )
-    },
-  })
-  .finish('string')
-
-const NumberNode = createPrimitiveNode(isNumber)
-  .extend({
-    render(store, key) {
-      return (
-        <input
-          key={key}
-          id={key}
-          data-key={key}
-          type="number"
-          value={this.getFlatValue(store, key)}
-          onChange={(e) => {
-            const newValue = parseFloat(e.target.value)
-
-            if (Number.isNaN(newValue)) return
-
-            store.update((tx) => {
-              this.updateValue(tx, key, newValue)
-            })
-          }}
-        />
-      )
-    },
-  })
-  .finish('number')
-
 const BooleanNode = createPrimitiveNode(isBoolean)
   .extend({
     render(store, key) {
