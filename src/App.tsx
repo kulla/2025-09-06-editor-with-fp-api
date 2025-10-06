@@ -240,9 +240,7 @@ interface NodeType<J = unknown, F = FlatValue> {
   toJsonValue(store: EditorStore, key: Key): J
 }
 
-type JSONValue<T extends NodeType> = T extends NodeType<FlatValue, infer J>
-  ? J
-  : never
+type JSONValue<T extends NodeType> = T extends NodeType<infer J> ? J : never
 
 function createNode<J, F extends FlatValue>() {
   return TypeBuilder.begin<NodeType<J, F>>().extend({
@@ -568,18 +566,9 @@ const MultipleChoiceExerciseNode = createObjectNode(
   ['exercise', 'answers'],
 ).finish('multipleChoiceExercise')
 
-function UnionNode<
-  T extends string,
-  C extends [NodeType, NodeType, ...NodeType[]],
->(
-  typeName: T,
-  childTypes: C,
-  getTypeName: (json: Spec<C[number]>['JSONValue']) => C[number]['typeName'],
-): NodeType<{
-  TypeName: T
-  FlatValue: NonRootKey
-  JSONValue: Spec<C[number]>['JSONValue']
-}> {
+function createUnionNode<
+  C extends [NonRootNodeType, NonRootNodeType, ...NonRootNodeType[]],
+>(childTypes: C, getTypeName: (json: JSONValue<C[number]>) => string) {
   function getChildType(childTypeName: string) {
     const childType = childTypes.find((ct) => ct.typeName === childTypeName)
 
@@ -588,82 +577,71 @@ function UnionNode<
     return childType
   }
 
-  return {
-    typeName,
-
+  return createNonRootNode<JSONValue<C[number]>, NonRootKey>().extend({
     isValidFlatValue: isNonRootKey,
 
     toJsonValue(store, key) {
-      const childKey = store.getValue(isNonRootKey, key)
+      const childKey = this.getFlatValue(store, key)
       const childType = getChildType(store.getTypeName(childKey))
 
-      return childType.toJsonValue(store, childKey)
+      return childType.toJsonValue(store, childKey) as JSONValue<C[number]>
     },
 
     store(tx, json, parentKey) {
       const childType = getChildType(getTypeName(json))
 
-      return tx.insert(typeName, parentKey, (key) =>
+      return tx.insert(this.typeName, parentKey, (key) =>
         childType.store(tx, json, key),
       )
     },
 
     render(store, key) {
-      const childKey = store.getValue(isNonRootKey, key)
+      const childKey = this.getFlatValue(store, key)
       const childType = getChildType(store.getTypeName(childKey))
 
       return childType.render(store, childKey)
     },
-  }
+  })
 }
 
-const DocumentItemType = UnionNode(
-  'documentItem',
+const DocumentItemType = createUnionNode(
   [ParagraphNode, MultipleChoiceExerciseNode],
   (json) => json.type,
-)
-const DocumentType = createArrayNode('document', DocumentItemType)
+).finish('documentItem')
 
-function RootType<C extends NodeSpec>(
-  childType: NodeType<C>,
-): NodeType<{
-  TypeName: 'root'
-  FlatValue: NonRootKey
-  JSONValue: C['JSONValue']
-  ParentKey: null
-}> {
-  return {
-    typeName: 'root' as const,
+const DocumentType = createArrayNode(DocumentItemType).finish('document')
 
-    isValidFlatValue: isNonRootKey,
+function RootType<CJ>(childType: NonRootNodeType<CJ>) {
+  return createNode<CJ, NonRootKey>()
+    .extendType<{
+      attachRoot(tx: Transaction, rootKey: RootKey, json: CJ): void
+    }>()
+    .extend({
+      isValidFlatValue: isNonRootKey,
 
-    toJsonValue(store, key) {
-      const childKey = store.getValue(this.isValidFlatValue, key)
-      return childType.toJsonValue(store, childKey)
-    },
+      toJsonValue(store, key) {
+        const childKey = store.getValue(this.isValidFlatValue, key)
+        return childType.toJsonValue(store, childKey)
+      },
 
-    store(tx, json, rootKey) {
-      tx.attachRoot(
-        rootKey as RootKey,
-        childType.store(tx, json, rootKey) as NonRootKey,
-      )
-      return rootKey
-    },
+      attachRoot(tx, rootKey, json) {
+        tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
+      },
 
-    render(store, key) {
-      const childKey = store.getValue(this.isValidFlatValue, key)
-      return (
-        <article key={key} id={key} data-key={key}>
-          {childType.render(store, childKey)}
-        </article>
-      )
-    },
-  }
+      render(store, key) {
+        const childKey = this.getFlatValue(store, key)
+        return (
+          <article key={key} id={key} data-key={key}>
+            {childType.render(store, childKey)}
+          </article>
+        )
+      },
+    })
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(DocumentType)
-const initialValue: Spec<AppRootType>['JSONValue'] = [
+const AppRootType = RootType(DocumentType).finish('root')
+const initialValue: JSONValue<AppRootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
     type: 'paragraph',
@@ -679,7 +657,7 @@ const initialValue: Spec<AppRootType>['JSONValue'] = [
     ],
   },
 ]
-const rootKey: Key = 'root'
+const rootKey: RootKey = 'root'
 
 export default function App() {
   const { store } = useEditorStore()
@@ -688,7 +666,7 @@ export default function App() {
     setTimeout(() => {
       if (store.has(rootKey)) return
 
-      store.update((tx) => AppRootType.store(tx, initialValue, rootKey))
+      store.update((tx) => AppRootType.attachRoot(tx, rootKey, initialValue))
     }, 1000)
   }, [store])
 
