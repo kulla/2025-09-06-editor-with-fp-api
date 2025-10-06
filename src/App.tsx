@@ -1,11 +1,12 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
+import { O } from 'ts-toolbelt'
 import { invariant, isBoolean, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
-import { type Guard, isArrayOf, isTupleOf } from './guards'
+import { type Guard, isArrayOf, isTupleOf, isNumber } from './guards'
 import { getSingletonYDoc } from './store/ydoc'
 
 type RootKey = 'root'
@@ -184,88 +185,204 @@ export function useEditorStore() {
   )
 }
 
-interface NodeSpec {
-  TypeName: string
-  FlatValue: FlatValue
-  JSONValue: unknown
+type MergeRight<A, B> = {
+  [K in keyof A | keyof B]: K extends keyof B
+    ? B[K]
+    : K extends keyof A
+      ? A[K]
+      : never
+} & unknown
+
+function mergeRight<A, B>(a: A, b: B): MergeRight<A, B> {
+  return { ...a, ...b } as MergeRight<A, B>
 }
 
-interface NodeType<S extends NodeSpec = NodeSpec> {
-  typeName: S['TypeName']
-  isValidFlatValue: Guard<S['FlatValue']>
-  toJsonValue(store: EditorStore, key: Key): S['JSONValue']
-  // TODO: Here the definition of "key" differs for root and non-root nodes
-  store(tx: Transaction, json: S['JSONValue'], key: Key): Key
+type Abstract<T extends object> = {
+  [K in keyof T]?: T[K] extends (...args: infer A) => infer R
+    ? (this: T, ...args: A) => R
+    : T[K]
+}
+
+class TypeBuilder<T extends object, I extends object> {
+  constructor(public readonly impl: I) {}
+
+  extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
+    const newImpl = typeof ext === 'function' ? ext(this.impl) : ext
+
+    return new TypeBuilder<T, MergeRight<I, I2>>(mergeRight(this.impl, newImpl))
+  }
+
+  extendType<T2 extends object>() {
+    return new TypeBuilder<MergeRight<T, T2>, I>(this.impl)
+  }
+
+  finish(this: TypeBuilder<T, Omit<T, 'typeName'>>, typeName: string): T {
+    return { ...this.impl, typeName } as T
+  }
+
+  static begin<Target extends object>(): TypeBuilder<Target, object>
+  static begin<Target extends object>(impl: Target): TypeBuilder<Target, Target>
+  static begin<Target extends object>(impl = {}) {
+    return new TypeBuilder<Target, object>(impl)
+  }
+}
+
+interface NodeType<F = FlatValue, J = unknown> {
+  __Flat?: F
+  __Json?: J
+
+  typeName: string
+
+  isValidFlatValue: Guard<F>
+  getFlatValue(store: EditorStore, key: Key): F
+  getParentKey(store: EditorStore, key: Key): Key | null
   render(store: EditorStore, key: Key): React.ReactNode
+  toJsonValue(store: EditorStore, key: Key): J
 }
 
-type Spec<T extends NodeType> = T extends NodeType<infer S> ? S : never
+type JSONValue<T extends NodeType> = T extends NodeType<FlatValue, infer J>
+  ? J
+  : never
 
-const BooleanType: NodeType<{
-  TypeName: 'boolean'
-  FlatValue: boolean
-  JSONValue: boolean
-}> = {
-  typeName: 'boolean' as const,
+function Node<F extends FlatValue, J>() {
+  return TypeBuilder.begin<NodeType<F, J>>().extend({
+    __Flat: undefined,
+    __Json: undefined,
 
-  isValidFlatValue: isBoolean,
+    getFlatValue(store, key) {
+      return store.getValue(this.isValidFlatValue, key)
+    },
 
-  toJsonValue(store, key) {
-    return store.getValue(this.isValidFlatValue, key)
-  },
-
-  store(tx, json, parentKey) {
-    return tx.insert(this.typeName, parentKey, () => json)
-  },
-
-  render(store, key) {
-    const currentValue = store.getValue(this.isValidFlatValue, key)
-
-    return (
-      <input
-        key={key}
-        id={key}
-        data-key={key}
-        type="checkbox"
-        checked={currentValue}
-        onChange={(e) => {
-          store.update((tx) => {
-            tx.update(this.isValidFlatValue, key, e.target.checked)
-          })
-        }}
-      />
-    )
-  },
+    getParentKey(store, key) {
+      return store.getParentKey(key)
+    },
+  })
 }
 
-const TextType: NodeType<{
-  TypeName: 'text'
-  FlatValue: Y.Text
-  JSONValue: string
-  ParentKey: Key
-}> = {
-  typeName: 'text' as const,
-
-  isValidFlatValue: (value) => value instanceof Y.Text,
-
-  toJsonValue(store, key) {
-    return store.getValue(this.isValidFlatValue, key).toString()
-  },
-
-  store(tx, json, parentKey) {
-    return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
-  },
-
-  render(store, key) {
-    const text = store.getValue(this.isValidFlatValue, key)
-
-    return (
-      <span key={key} id={key} data-key={key}>
-        {text.toString()}
-      </span>
-    )
-  },
+interface NonRootNodeType<F extends FlatValue, J> extends NodeType<F, J> {
+  store(tx: Transaction, json: J, parentKey: Key): Key
 }
+
+function NonRoot<F extends FlatValue, J>() {
+  return Node<F, J>()
+    .extendType<NonRootNodeType<F, J>>()
+    .extend((Base) => ({
+      getParentKey(store, key) {
+        const parentKey = Base.getParentKey.call(this, store, key)
+
+        invariant(parentKey != null, `Non-root node ${key} has no parent`)
+
+        return parentKey
+      },
+    }))
+}
+
+const TextType = NonRoot<Y.Text, string>()
+  .extend({
+    typeName: 'text' as const,
+
+    isValidFlatValue: (value) => value instanceof Y.Text,
+
+    toJsonValue(store, key) {
+      return this.getFlatValue(store, key).toString()
+    },
+
+    store(tx, json, parentKey) {
+      return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
+    },
+
+    render(store, key) {
+      return (
+        <span key={key} id={key} data-key={key}>
+          {this.toJsonValue(store, key)}
+        </span>
+      )
+    },
+  })
+  .finish('text')
+
+function PrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
+  return NonRoot<V, V>().extend({
+    isValidFlatValue: guard,
+
+    toJsonValue(store, key) {
+      return this.getFlatValue(store, key)
+    },
+
+    store(tx, json, parentKey) {
+      return tx.insert(this.typeName, parentKey, () => json)
+    },
+  })
+}
+
+const StringType = PrimitiveNode(isString)
+  .extend({
+    render(store, key) {
+      return (
+        <input
+          key={key}
+          id={key}
+          data-key={key}
+          type="text"
+          value={this.getFlatValue(store, key)}
+          onChange={(e) => {
+            store.update((tx) => {
+              tx.update(this.isValidFlatValue, key, e.target.value)
+            })
+          }}
+        />
+      )
+    },
+  })
+  .finish('string')
+
+const NumberType = PrimitiveNode(isNumber)
+  .extend({
+    render(store, key) {
+      return (
+        <input
+          key={key}
+          id={key}
+          data-key={key}
+          type="number"
+          value={this.getFlatValue(store, key)}
+          onChange={(e) => {
+            const newValue = parseFloat(e.target.value)
+
+            if (Number.isNaN(newValue)) return
+
+            store.update((tx) => {
+              tx.update(this.isValidFlatValue, key, newValue)
+            })
+          }}
+        />
+      )
+    },
+  })
+  .finish('number')
+
+const BooleanType = PrimitiveNode(isBoolean)
+  .extend({
+    render(store, key) {
+      const currentValue = this.getFlatValue(store, key)
+
+      return (
+        <input
+          key={key}
+          id={key}
+          data-key={key}
+          type="checkbox"
+          checked={currentValue}
+          onChange={(e) => {
+            store.update((tx) => {
+              tx.update(this.isValidFlatValue, key, e.target.checked)
+            })
+          }}
+        />
+      )
+    },
+  })
+  .finish('boolean')
 
 function WrappedNode<T extends string, C extends NodeSpec>(
   typeName: T,
