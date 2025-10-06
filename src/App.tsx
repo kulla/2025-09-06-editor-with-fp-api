@@ -662,21 +662,21 @@ export default function App() {
       )}
       <DebugPanel
         labels={{
-          entries: 'Internal editor store',
           json: 'JSON representation',
+          entries: 'Internal editor store',
         }}
         getCurrentValue={{
-          entries: () => {
-            const stringifyEntry = ([key, entry]: [string, unknown]) =>
-              `${padStart(key, 11)}: ${JSON.stringify(entry)}`
-
-            return store.getValueEntries().map(stringifyEntry).join('\n')
-          },
           json: () => {
             if (!store.has(rootKey)) return ''
 
             const jsonValue = AppRootType.toJsonValue(store, rootKey)
             return JSON.stringify(jsonValue, null, 2)
+          },
+          entries: () => {
+            const stringifyEntry = ([key, entry]: [string, unknown]) =>
+              `${padStart(key, 11)}: ${JSON.stringify(entry)}`
+
+            return store.getValueEntries().map(stringifyEntry).join('\n')
           },
         }}
         showOnStartup={{ entries: true, json: true }}
