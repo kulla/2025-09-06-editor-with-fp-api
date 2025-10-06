@@ -227,7 +227,7 @@ class TypeBuilder<T extends object, I extends object> {
   }
 }
 
-interface NodeType<F = FlatValue, J = unknown> {
+interface NodeType<J = unknown, F = FlatValue> {
   __Flat?: F
   __Json?: J
 
@@ -244,8 +244,8 @@ type JSONValue<T extends NodeType> = T extends NodeType<FlatValue, infer J>
   ? J
   : never
 
-function createNode<F extends FlatValue, J>() {
-  return TypeBuilder.begin<NodeType<F, J>>().extend({
+function createNode<J, F extends FlatValue>() {
+  return TypeBuilder.begin<NodeType<J, F>>().extend({
     __Flat: undefined,
     __Json: undefined,
 
@@ -259,13 +259,13 @@ function createNode<F extends FlatValue, J>() {
   })
 }
 
-interface NonRootNodeType<F extends FlatValue, J> extends NodeType<F, J> {
+interface NonRootNodeType<J = unknown, F = FlatValue> extends NodeType<J, F> {
   store(tx: Transaction, json: J, parentKey: Key): Key
 }
 
-function createNonRoot<F extends FlatValue, J>() {
-  return createNode<F, J>()
-    .extendType<NonRootNodeType<F, J>>()
+function createNonRoot<J, F extends FlatValue>() {
+  return createNode<J, F>()
+    .extendType<NonRootNodeType<J, F>>()
     .extend((Base) => ({
       getParentKey(store, key) {
         const parentKey = Base.getParentKey.call(this, store, key)
@@ -277,10 +277,8 @@ function createNonRoot<F extends FlatValue, J>() {
     }))
 }
 
-const TextType = createNonRoot<Y.Text, string>()
+const TextType = createNonRoot<string, Y.Text>()
   .extend({
-    typeName: 'text' as const,
-
     isValidFlatValue: (value) => value instanceof Y.Text,
 
     toJsonValue(store, key) {
@@ -390,47 +388,46 @@ const BooleanType = createPrimitive(isBoolean)
   })
   .finish('boolean')
 
-function WrappedNode<T extends string, C extends NodeSpec>(
+function createWrappedNode<T extends string, CJ>(
   typeName: T,
-  childType: NodeType<C>,
-  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
-): NodeType<{
-  TypeName: T
-  FlatValue: NonRootKey
-  JSONValue: { type: T; value: C['JSONValue'] }
-}> {
-  function getChild(store: EditorStore, key: Key) {
-    return store.getValue(isNonRootKey, key)
-  }
+  childType: NonRootNodeType<CJ, FlatValue>,
+) {
+  return createNonRoot<{ type: T; value: CJ }, NonRootKey>()
+    .extendType<{ HtmlTag: React.ElementType }>()
+    .extend({
+      isValidFlatValue: isNonRootKey,
 
-  return {
-    typeName,
+      HtmlTag: 'div',
 
-    isValidFlatValue: isNonRootKey,
+      toJsonValue(store, key) {
+        const childKey = this.getFlatValue(store, key)
+        const childValue = childType.toJsonValue(store, childKey)
 
-    toJsonValue(store, key) {
-      const value = childType.toJsonValue(store, getChild(store, key))
+        return { type: typeName, value: childValue }
+      },
 
-      return { type: typeName, value }
-    },
+      store(tx, json, parentKey) {
+        return tx.insert(typeName, parentKey, (key) =>
+          childType.store(tx, json.value, key),
+        )
+      },
 
-    store(tx, { value }, parentKey) {
-      return tx.insert(typeName, parentKey, (key) =>
-        childType.store(tx, value, key),
-      )
-    },
+      render(store, key) {
+        const HtmlTag = this.HtmlTag
+        const childKey = this.getFlatValue(store, key)
 
-    render(store, key) {
-      return (
-        <HtmlTag key={key} id={key} data-key={key}>
-          {childType.render(store, getChild(store, key))}
-        </HtmlTag>
-      )
-    },
-  }
+        return (
+          <HtmlTag key={key} id={key} data-key={key}>
+            {childType.render(store, childKey)}
+          </HtmlTag>
+        )
+      },
+    })
 }
 
-const ParagraphType = WrappedNode('paragraph', TextType, { HtmlTag: 'p' })
+const ParagraphType = createWrappedNode('paragraph', TextType)
+  .extend({ HtmlTag: 'p' })
+  .finish('paragraph')
 
 function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
