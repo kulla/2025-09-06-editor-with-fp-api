@@ -260,7 +260,7 @@ function createNode<J, F extends FlatValue>() {
 }
 
 interface NonRootNodeType<J = unknown, F = FlatValue> extends NodeType<J, F> {
-  store(tx: Transaction, json: J, parentKey: Key): Key
+  store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 
 function createNonRoot<J, F extends FlatValue>() {
@@ -437,75 +437,45 @@ const ParagraphType = createWrappedNode('paragraph', TextType)
   .extend({ HtmlTag: 'p' })
   .finish('paragraph')
 
-function ArrayNode<T extends string, C extends NodeSpec>(
-  typeName: T,
-  childType: NodeType<C>,
-  { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
-): NodeType<{
-  TypeName: T
-  FlatValue: NonRootKey[]
-  JSONValue: C['JSONValue'][]
-}> {
-  const isValidFlatValue = isArrayOf(isNonRootKey)
+function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
+  return createNonRoot<CJ[], NonRootKey[]>()
+    .extendType<{ HtmlTag: React.ElementType }>()
+    .extend({
+      isValidFlatValue: isArrayOf(isNonRootKey),
 
-  const getChildren = (store: EditorStore, node: Key) =>
-    store.getValue(isValidFlatValue, node)
+      HtmlTag: 'div',
 
-  return {
-    typeName,
+      toJsonValue(store, key) {
+        const childKeys = this.getFlatValue(store, key)
+        return childKeys.map((childKey) =>
+          childType.toJsonValue(store, childKey),
+        )
+      },
 
-    isValidFlatValue,
+      store(tx, json, parentKey) {
+        return tx.insert(this.typeName, parentKey, (key) =>
+          json.map((item) => childType.store(tx, item, key)),
+        )
+      },
 
-    toJsonValue(store, key) {
-      return getChildren(store, key).map((child) =>
-        childType.toJsonValue(store, child),
-      )
-    },
+      render(store, key) {
+        const HtmlTag = this.HtmlTag
+        const childKeys = this.getFlatValue(store, key)
 
-    store(tx, json, parentKey) {
-      return tx.insert(typeName, parentKey, (key) =>
-        // @ts-expect-error
-        json.map((item) => childType.store(tx, item, key)),
-      )
-    },
+        const children = childKeys.map((childKey) =>
+          childType.render(store, childKey),
+        )
 
-    render(store, key) {
-      const children = getChildren(store, key).map((childKey) =>
-        childType.render(store, childKey),
-      )
-
-      return (
-        <HtmlTag key={key} id={key} data-key={key}>
-          {children}
-        </HtmlTag>
-      )
-    },
-  }
+        return (
+          <HtmlTag key={key} id={key} data-key={key}>
+            {children}
+          </HtmlTag>
+        )
+      },
+    })
 }
 
-function LiteralNode<V extends PrimitiveValue>(
-  value: V,
-): NodeType<{ TypeName: `literal:${V}`; FlatValue: V; JSONValue: V }> {
-  const typeName = `literal:${value}` as const
-
-  return {
-    typeName,
-
-    isValidFlatValue: (v): v is V => v === value,
-
-    toJsonValue() {
-      return value
-    },
-
-    store(tx, json, parentKey) {
-      return tx.insert(typeName, parentKey, () => json)
-    },
-
-    render() {
-      return null
-    },
-  }
-}
+const Content = createArrayNode(ParagraphType).finish('content')
 
 function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   typeName: T,
@@ -565,17 +535,15 @@ const MultipleChoiceAnswerType = ObjectNode(
   ['isCorrect', 'text'],
 )
 
-const MultipleChoiceAnswersType = ArrayNode(
+const MultipleChoiceAnswersType = createArrayNode(
   'multipleChoiceAnswers',
   MultipleChoiceAnswerType,
 )
 
-const Content = ArrayNode('content', ParagraphType)
-
 const MultipleChoiceExerciseType = ObjectNode(
   'multipleChoiceExercise',
   {
-    type: LiteralNode('multipleChoiceExercise'),
+    type: createLiteralNode('multipleChoiceExercise'),
     exercise: Content,
     answers: MultipleChoiceAnswersType,
   },
@@ -636,7 +604,7 @@ const DocumentItemType = UnionNode(
   [ParagraphType, MultipleChoiceExerciseType],
   (json) => json.type,
 )
-const DocumentType = ArrayNode('document', DocumentItemType)
+const DocumentType = createArrayNode('document', DocumentItemType)
 
 function RootType<C extends NodeSpec>(
   childType: NodeType<C>,
