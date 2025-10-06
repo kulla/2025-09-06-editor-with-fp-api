@@ -493,7 +493,10 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
     { [K in keyof C]: JSONValue<C[K]> },
     [keyof C & string, NonRootKey][]
   >()
-    .extendType<{ HtmlTag: React.ElementType }>()
+    .extendType<{
+      HtmlTag: React.ElementType
+      getPropKey(store: EditorStore, key: Key, prop: keyof C): NonRootKey
+    }>()
     .extend({
       isValidFlatValue: isArrayOf(
         isTupleOf(
@@ -503,6 +506,15 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
       ),
 
       HtmlTag: 'div',
+
+      getPropKey(store, key, prop) {
+        const entries = this.getFlatValue(store, key)
+        const entry = entries.find(([p]) => p === prop)
+
+        invariant(entry, `Property ${String(prop)} not found in object ${key}`)
+
+        return entry[1]
+      },
 
       toJsonValue(store, key) {
         const props = this.getFlatValue(store, key).map(([prop, childKey]) => {
@@ -564,7 +576,33 @@ const MultipleChoiceExerciseNode = createObjectNode(
     answers: MultipleChoiceAnswersNode,
   },
   ['exercise', 'answers'],
-).finish('multipleChoiceExercise')
+)
+  .extend({
+    render(store, key) {
+      const exerciseKey = this.getPropKey(store, key, 'exercise')
+      const answersKey = this.getPropKey(store, key, 'answers')
+
+      return (
+        <div
+          key={key}
+          id={key}
+          data-key={key}
+          className="multipleChoiceExercise"
+        >
+          <div className="exercise">
+            <p>
+              <strong>Multiple Choice Exercise:</strong>
+            </p>
+            {ContentNode.render(store, exerciseKey)}
+          </div>
+          <div className="answers">
+            {MultipleChoiceAnswersNode.render(store, answersKey)}
+          </div>
+        </div>
+      )
+    },
+  })
+  .finish('multipleChoiceExercise')
 
 function createUnionNode<
   C extends [NonRootNodeType, NonRootNodeType, ...NonRootNodeType[]],
