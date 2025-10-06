@@ -244,7 +244,7 @@ type JSONValue<T extends NodeType> = T extends NodeType<FlatValue, infer J>
   ? J
   : never
 
-function Node<F extends FlatValue, J>() {
+function createNode<F extends FlatValue, J>() {
   return TypeBuilder.begin<NodeType<F, J>>().extend({
     __Flat: undefined,
     __Json: undefined,
@@ -263,8 +263,8 @@ interface NonRootNodeType<F extends FlatValue, J> extends NodeType<F, J> {
   store(tx: Transaction, json: J, parentKey: Key): Key
 }
 
-function NonRoot<F extends FlatValue, J>() {
-  return Node<F, J>()
+function createNonRoot<F extends FlatValue, J>() {
+  return createNode<F, J>()
     .extendType<NonRootNodeType<F, J>>()
     .extend((Base) => ({
       getParentKey(store, key) {
@@ -277,7 +277,7 @@ function NonRoot<F extends FlatValue, J>() {
     }))
 }
 
-const TextType = NonRoot<Y.Text, string>()
+const TextType = createNonRoot<Y.Text, string>()
   .extend({
     typeName: 'text' as const,
 
@@ -302,7 +302,7 @@ const TextType = NonRoot<Y.Text, string>()
   .finish('text')
 
 function createPrimitive<V extends PrimitiveValue>(guard: Guard<V>) {
-  return NonRoot<V, V>()
+  return createNonRoot<V, V>()
     .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
     .extend({
       isValidFlatValue: guard,
