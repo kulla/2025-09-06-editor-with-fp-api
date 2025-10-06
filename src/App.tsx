@@ -8,17 +8,20 @@ import { DebugPanel } from './components/debug-panel'
 import { type Guard, isArrayOf, isTupleOf } from './guards'
 import { getSingletonYDoc } from './store/ydoc'
 
-type Key = `${number}` | 'root'
+type RootKey = 'root'
+type NonRootKey = `${number}`
+type Key = RootKey | NonRootKey
 
-function isKey(value: unknown): value is Key {
-  return (
-    typeof value === 'string' &&
-    (value === 'root' || /^[1-9][0-9]*$/.test(value))
-  )
-}
+const isNonRootKey = (value: unknown): value is NonRootKey =>
+  typeof value === 'string' && /^[1-9][0-9]*$/.test(value)
 
 type PrimitiveValue = string | number | boolean
-type FlatValue = PrimitiveValue | Y.Text | Key | Key[] | [string, Key][]
+type FlatValue =
+  | PrimitiveValue
+  | Y.Text
+  | NonRootKey
+  | NonRootKey[]
+  | [string, NonRootKey][]
 
 interface Transaction {
   update<F extends FlatValue>(
@@ -26,12 +29,12 @@ interface Transaction {
     key: Key,
     updateFn: F | ((current: F) => F),
   ): void
-  attachRoot(rootKey: Key, value: Key): Key
+  attachRoot(rootKey: RootKey, value: NonRootKey): void
   insert<T extends string>(
     typeName: T,
     parentKey: Key,
-    createValue: (key: Key) => FlatValue,
-  ): Key
+    createValue: (key: NonRootKey) => FlatValue,
+  ): NonRootKey
 }
 
 export class EditorStore {
@@ -152,7 +155,7 @@ export class EditorStore {
     this.state.set('updateCount', this.updateCount + 1)
   }
 
-  private generateNextKey(): Key {
+  private generateNextKey(): NonRootKey {
     this.lastKeyNumber += 1
 
     return `${this.lastKeyNumber}`
@@ -270,17 +273,17 @@ function WrappedNode<T extends string, C extends NodeSpec>(
   { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
 ): NodeType<{
   TypeName: T
-  FlatValue: Key
+  FlatValue: NonRootKey
   JSONValue: { type: T; value: C['JSONValue'] }
 }> {
   function getChild(store: EditorStore, key: Key) {
-    return store.getValue(isKey, key)
+    return store.getValue(isNonRootKey, key)
   }
 
   return {
     typeName,
 
-    isValidFlatValue: isKey,
+    isValidFlatValue: isNonRootKey,
 
     toJsonValue(store, key) {
       const value = childType.toJsonValue(store, getChild(store, key))
@@ -310,8 +313,12 @@ function ArrayNode<T extends string, C extends NodeSpec>(
   typeName: T,
   childType: NodeType<C>,
   { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
-): NodeType<{ TypeName: T; FlatValue: Key[]; JSONValue: C['JSONValue'][] }> {
-  const isValidFlatValue = isArrayOf(isKey)
+): NodeType<{
+  TypeName: T
+  FlatValue: NonRootKey[]
+  JSONValue: C['JSONValue'][]
+}> {
+  const isValidFlatValue = isArrayOf(isNonRootKey)
 
   const getChildren = (store: EditorStore, node: Key) =>
     store.getValue(isValidFlatValue, node)
@@ -329,6 +336,7 @@ function ArrayNode<T extends string, C extends NodeSpec>(
 
     store(tx, json, parentKey) {
       return tx.insert(typeName, parentKey, (key) =>
+        // @ts-expect-error
         json.map((item) => childType.store(tx, item, key)),
       )
     },
@@ -378,10 +386,10 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
   { HtmlTag = 'div' }: { HtmlTag?: React.ElementType } = {},
 ): NodeType<{
   TypeName: T
-  FlatValue: [keyof C & string, Key][]
+  FlatValue: [keyof C & string, NonRootKey][]
   JSONValue: { [K in keyof C]: C[K]['JSONValue'] }
 }> {
-  const isValidFlatValue = isArrayOf(isTupleOf(isString, isKey))
+  const isValidFlatValue = isArrayOf(isTupleOf(isString, isNonRootKey))
   const getChildren = (store: EditorStore, node: Key) =>
     store.getValue(isValidFlatValue, node)
 
@@ -403,7 +411,7 @@ function ObjectNode<T extends string, C extends Record<string, NodeSpec>>(
         return keyOrder.map((prop) => {
           const childKey = childTypes[prop].store(tx, json[prop], key)
 
-          return [prop, childKey] as [keyof C & string, Key]
+          return [prop, childKey] as [keyof C & string, NonRootKey]
         })
       })
     },
@@ -455,7 +463,7 @@ function UnionNode<
   getTypeName: (json: Spec<C[number]>['JSONValue']) => C[number]['typeName'],
 ): NodeType<{
   TypeName: T
-  FlatValue: Key
+  FlatValue: NonRootKey
   JSONValue: Spec<C[number]>['JSONValue']
 }> {
   function getChildType(childTypeName: string) {
@@ -469,10 +477,10 @@ function UnionNode<
   return {
     typeName,
 
-    isValidFlatValue: isKey,
+    isValidFlatValue: isNonRootKey,
 
     toJsonValue(store, key) {
-      const childKey = store.getValue(isKey, key)
+      const childKey = store.getValue(isNonRootKey, key)
       const childType = getChildType(store.getTypeName(childKey))
 
       return childType.toJsonValue(store, childKey)
@@ -487,7 +495,7 @@ function UnionNode<
     },
 
     render(store, key) {
-      const childKey = store.getValue(isKey, key)
+      const childKey = store.getValue(isNonRootKey, key)
       const childType = getChildType(store.getTypeName(childKey))
 
       return childType.render(store, childKey)
@@ -506,14 +514,14 @@ function RootType<C extends NodeSpec>(
   childType: NodeType<C>,
 ): NodeType<{
   TypeName: 'root'
-  FlatValue: Key
+  FlatValue: NonRootKey
   JSONValue: C['JSONValue']
   ParentKey: null
 }> {
   return {
     typeName: 'root' as const,
 
-    isValidFlatValue: isKey,
+    isValidFlatValue: isNonRootKey,
 
     toJsonValue(store, key) {
       const childKey = store.getValue(this.isValidFlatValue, key)
@@ -521,7 +529,11 @@ function RootType<C extends NodeSpec>(
     },
 
     store(tx, json, rootKey) {
-      return tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
+      tx.attachRoot(
+        rootKey as RootKey,
+        childType.store(tx, json, rootKey) as NonRootKey,
+      )
+      return rootKey
     },
 
     render(store, key) {
