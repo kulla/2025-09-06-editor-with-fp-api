@@ -1,13 +1,12 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import {invariant, isBoolean, isEqual, isString} from 'es-toolkit'
-import {padStart} from 'es-toolkit/compat'
-import {html as beautifyHtml} from 'js-beautify'
-import {useCallback, useEffect} from 'react'
-import {renderToStaticMarkup} from 'react-dom/server'
-import type {O} from 'ts-toolbelt'
+import { invariant, isBoolean, isEqual, isString } from 'es-toolkit'
+import { padStart } from 'es-toolkit/compat'
+import { html as beautifyHtml } from 'js-beautify'
+import { useCallback, useEffect } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import * as Y from 'yjs'
-import {DebugPanel} from './components/debug-panel'
+import { DebugPanel } from './components/debug-panel'
 import {
   type Guard,
   isArrayOf,
@@ -15,9 +14,10 @@ import {
   isKeyOf,
   isTupleOf,
 } from './guards'
-import {useEditorStore} from './hooks/use-editor-store'
-import {getCurrentCursor, setSelection} from './selection'
-import type {EditorStore} from './store/store'
+import { useEditorStore } from './hooks/use-editor-store'
+import { TypeBuilder } from './nodes/core/type-builder'
+import { getCurrentCursor, setSelection } from './selection'
+import type { EditorStore } from './store/store'
 import {
   type FlatValue,
   isNonRootKey,
@@ -26,38 +26,7 @@ import {
   type RootKey,
   type Transaction,
 } from './store/types'
-import type {PrimitiveValue} from './utils/types'
-
-type Abstract<T extends object> = {
-  [K in keyof T]?: T[K] extends (...args: infer A) => infer R
-  ? (this: T, ...args: A) => R
-  : T[K]
-}
-
-class TypeBuilder<T extends object, I extends object> {
-  constructor(public readonly impl: I) {}
-
-  extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
-    const extension = typeof ext === 'function' ? ext(this.impl) : ext
-    const newImpl = {...this.impl, ...extension} as O.Merge<I, I2>
-
-    return new TypeBuilder<T, O.Merge<I, I2>>(newImpl)
-  }
-
-  extendType<T2 extends object>() {
-    return new TypeBuilder<O.Merge<T, T2>, I>(this.impl)
-  }
-
-  finish(this: TypeBuilder<T, Omit<T, 'typeName'>>, typeName: string): T {
-    return {...this.impl, typeName} as T
-  }
-
-  static begin<Target extends object>(): TypeBuilder<Target, object>
-  static begin<Target extends object>(impl: Target): TypeBuilder<Target, Target>
-  static begin<Target extends object>(impl = {}) {
-    return new TypeBuilder<Target, object>(impl)
-  }
-}
+import type { PrimitiveValue } from './utils/types'
 
 interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
@@ -128,7 +97,7 @@ const TextNode = createNonRootNode<string, Y.Text>()
 
 function createPrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
   return createNonRootNode<V, V>()
-    .extendType<{updateValue(tx: Transaction, key: Key, newValue: V): void}>()
+    .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
     .extend({
       isValidFlatValue: guard,
 
@@ -181,8 +150,8 @@ function createWrappedNode<T extends string, CJ>(
   typeName: T,
   childType: NonRootNodeType<CJ, FlatValue>,
 ) {
-  return createNonRootNode<{type: T; value: CJ}, NonRootKey>()
-    .extendType<{HtmlTag: React.ElementType}>()
+  return createNonRootNode<{ type: T; value: CJ }, NonRootKey>()
+    .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isNonRootKey,
 
@@ -192,7 +161,7 @@ function createWrappedNode<T extends string, CJ>(
         const childKey = this.getFlatValue(store, key)
         const childValue = childType.toJsonValue(store, childKey)
 
-        return {type: typeName, value: childValue}
+        return { type: typeName, value: childValue }
       },
 
       store(tx, json, parentKey) {
@@ -215,12 +184,12 @@ function createWrappedNode<T extends string, CJ>(
 }
 
 const ParagraphNode = createWrappedNode('paragraph', TextNode)
-  .extend({HtmlTag: 'p'})
+  .extend({ HtmlTag: 'p' })
   .finish('paragraph')
 
 function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
   return createNonRootNode<CJ[], NonRootKey[]>()
-    .extendType<{HtmlTag: React.ElementType}>()
+    .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isArrayOf(isNonRootKey),
 
@@ -263,7 +232,7 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
   keyOrder: (keyof C)[],
 ) {
   return createNonRootNode<
-    {[K in keyof C]: JSONValue<C[K]>},
+    { [K in keyof C]: JSONValue<C[K]> },
     [keyof C & string, NonRootKey][]
   >()
     .extendType<{
@@ -332,7 +301,7 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
 }
 
 const MultipleChoiceAnswerNode = createObjectNode(
-  {isCorrect: BooleanNode, text: TextNode},
+  { isCorrect: BooleanNode, text: TextNode },
   ['isCorrect', 'text'],
 )
   .extend({
@@ -351,7 +320,7 @@ const MultipleChoiceAnswerNode = createObjectNode(
   .finish('multipleChoiceAnswer')
 
 const MultipleChoiceAnswersNode = createArrayNode(MultipleChoiceAnswerNode)
-  .extend({HtmlTag: 'ul'})
+  .extend({ HtmlTag: 'ul' })
   .finish('multipleChoiceAnswers')
 
 const MultipleChoiceExerciseNode = createObjectNode(
@@ -474,25 +443,25 @@ function RootType<CJ>(childType: NonRootNodeType<CJ>) {
 type AppRootType = typeof AppRootType
 const AppRootType = RootType(DocumentType).finish('root')
 const initialValue: JSONValue<AppRootType> = [
-  {type: 'paragraph', value: 'Hello, Rsbuild!'},
+  { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
     type: 'paragraph',
     value: 'This is a simple rich text editor built with React and Rsbuild.',
   },
   {
     type: 'multipleChoiceExercise',
-    exercise: [{type: 'paragraph', value: 'What is the capital of France?'}],
+    exercise: [{ type: 'paragraph', value: 'What is the capital of France?' }],
     answers: [
-      {isCorrect: false, text: 'Berlin'},
-      {isCorrect: true, text: 'Paris'},
-      {isCorrect: false, text: 'Madrid'},
+      { isCorrect: false, text: 'Berlin' },
+      { isCorrect: true, text: 'Paris' },
+      { isCorrect: false, text: 'Madrid' },
     ],
   },
 ]
 const rootKey: RootKey = 'root'
 
 export default function App() {
-  const {store} = useEditorStore()
+  const { store } = useEditorStore()
 
   useEffect(() => {
     if (store.has(rootKey)) return

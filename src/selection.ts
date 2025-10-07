@@ -1,4 +1,4 @@
-import {isKey, type Key} from './store/types'
+import { isKey, type Key } from './store/types'
 
 export interface Cursor {
   start: Point
@@ -22,7 +22,7 @@ export function getCurrentCursor(): Cursor | null {
 
   if (startPoint == null || endPoint == null) return null
 
-  return {start: startPoint, end: endPoint}
+  return { start: startPoint, end: endPoint }
 }
 
 export function getPoint(
@@ -35,11 +35,11 @@ export function getPoint(
 
   if (htmlNode == null) return null
 
-  const {key, type} = htmlNode.dataset
+  const { key, type } = htmlNode.dataset
 
   if (!isKey(key)) return getPoint(node.parentNode, null)
 
-  return type === 'text' && offset != null ? {key, index: offset} : {key}
+  return type === 'text' && offset != null ? { key, index: offset } : { key }
 }
 
 export function setSelection(cursor: Cursor | null) {
@@ -48,7 +48,7 @@ export function setSelection(cursor: Cursor | null) {
     return
   }
 
-  const {start, end} = cursor
+  const { start, end } = cursor
 
   const selection = window.getSelection()
   if (selection == null) return
