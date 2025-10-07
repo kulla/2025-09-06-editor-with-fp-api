@@ -1,164 +1,25 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant, isEqual, isString } from 'es-toolkit'
+import { invariant, isEqual } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
-import { isArrayOf, isIntersectionOf, isKeyOf, isTupleOf } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
-import { BooleanNode } from './nodes/boolean'
-import { ContentNode } from './nodes/content'
 import { defineArrayNode } from './nodes/core/define-array-node'
-import { defineLiteralNode } from './nodes/core/define-literal-nodes'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
+import { MultipleChoiceExerciseNode } from './nodes/multiple-choice'
 import { ParagraphNode } from './nodes/paragraph'
-import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
-import type { EditorStore } from './store/store'
 import {
   isNonRootKey,
-  type Key,
   type NonRootKey,
   type RootKey,
   type Transaction,
 } from './store/types'
-
-function defineObjectNode<C extends Record<string, NonRootNodeType>>(
-  childTypes: C,
-  keyOrder: (keyof C)[],
-) {
-  return defineNonRootNode<
-    { [K in keyof C]: JSONValue<C[K]> },
-    [keyof C & string, NonRootKey][]
-  >()
-    .extendType<{
-      HtmlTag: React.ElementType
-      getPropKey(store: EditorStore, key: Key, prop: keyof C): NonRootKey
-    }>()
-    .extend({
-      isValidFlatValue: isArrayOf(
-        isTupleOf(
-          isIntersectionOf(isString, isKeyOf(childTypes)),
-          isNonRootKey,
-        ),
-      ),
-
-      HtmlTag: 'div',
-
-      getPropKey(store, key, prop) {
-        const entries = this.getFlatValue(store, key)
-        const entry = entries.find(([p]) => p === prop)
-
-        invariant(entry, `Property ${String(prop)} not found in object ${key}`)
-
-        return entry[1]
-      },
-
-      toJsonValue(store, key) {
-        const props = this.getFlatValue(store, key).map(([prop, childKey]) => {
-          const childType = childTypes[prop]
-
-          return [prop, childType.toJsonValue(store, childKey)]
-        })
-
-        return Object.fromEntries(props) as {
-          [K in keyof C]: JSONValue<C[K]>
-        }
-      },
-
-      store(tx, json, parentKey) {
-        return tx.insert(this.typeName, parentKey, (key) => {
-          return keyOrder.map((prop) => {
-            const childType = childTypes[prop]
-            const childKey = childType.store(tx, json[prop], key)
-
-            return [prop, childKey] as [keyof C & string, NonRootKey]
-          })
-        })
-      },
-
-      render(store, key) {
-        const HtmlTag = this.HtmlTag
-        const children = this.getFlatValue(store, key).map(
-          ([prop, childKey]) => {
-            const childType = childTypes[prop]
-
-            return childType.render(store, childKey)
-          },
-        )
-
-        return (
-          <HtmlTag key={key} id={key} data-key={key} className={this.typeName}>
-            {children}
-          </HtmlTag>
-        )
-      },
-    })
-}
-
-const MultipleChoiceAnswerNode = defineObjectNode(
-  { isCorrect: BooleanNode, text: TextNode },
-  ['isCorrect', 'text'],
-)
-  .extend({
-    render(store, key) {
-      const isCorrectKey = this.getPropKey(store, key, 'isCorrect')
-      const textKey = this.getPropKey(store, key, 'text')
-
-      return (
-        <li key={key} id={key} data-key={key} className={this.typeName}>
-          {BooleanNode.render(store, isCorrectKey)}
-          {TextNode.render(store, textKey)}
-        </li>
-      )
-    },
-  })
-  .finish('multipleChoiceAnswer')
-
-const MultipleChoiceAnswersNode = defineArrayNode(MultipleChoiceAnswerNode)
-  .extend({ HtmlTag: 'ul' })
-  .finish('multipleChoiceAnswers')
-
-const MultipleChoiceExerciseNode = defineObjectNode(
-  {
-    type: defineLiteralNode('multipleChoiceExercise').finish(
-      'literal:multipleChoiceExercise',
-    ),
-    exercise: ContentNode,
-    answers: MultipleChoiceAnswersNode,
-  },
-  ['exercise', 'answers'],
-)
-  .extend({
-    render(store, key) {
-      const exerciseKey = this.getPropKey(store, key, 'exercise')
-      const answersKey = this.getPropKey(store, key, 'answers')
-
-      return (
-        <fieldset
-          key={key}
-          id={key}
-          data-key={key}
-          className="multipleChoiceExercise"
-        >
-          <div className="exercise block">
-            <legend className="mt-2">
-              <strong>Multiple Choice Exercise</strong>
-            </legend>
-            {ContentNode.render(store, exerciseKey)}
-          </div>
-          <div className="answers">
-            {MultipleChoiceAnswersNode.render(store, answersKey)}
-          </div>
-        </fieldset>
-      )
-    },
-  })
-  .finish('multipleChoiceExercise')
 
 function defineUnionNode<
   C extends [NonRootNodeType, NonRootNodeType, ...NonRootNodeType[]],
