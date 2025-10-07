@@ -116,11 +116,13 @@ export class EditorStore {
       this.ydoc.transact(() => {
         this.currentTransaction = this.createNewTransaction()
 
-        updateFn(this.currentTransaction)
+        try {
+          updateFn(this.currentTransaction)
 
-        this.incrementUpdateCount()
-
-        this.currentTransaction = null
+          this.incrementUpdateCount()
+        } finally {
+          this.currentTransaction = null
+        }
       })
     }
   }
