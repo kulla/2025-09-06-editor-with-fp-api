@@ -1,21 +1,16 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant, isBoolean, isEqual, isString } from 'es-toolkit'
+import { invariant, isEqual, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
-import {
-  type Guard,
-  isArrayOf,
-  isIntersectionOf,
-  isKeyOf,
-  isTupleOf,
-} from './guards'
+import { isArrayOf, isIntersectionOf, isKeyOf, isTupleOf } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
+import { definePrimitiveNode } from './nodes/core/define-primitive-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
 import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
@@ -30,51 +25,8 @@ import {
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
 
-function createPrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
-  return defineNonRootNode<V, V>()
-    .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
-    .extend({
-      isValidFlatValue: guard,
-
-      toJsonValue(store, key) {
-        return this.getFlatValue(store, key)
-      },
-
-      updateValue(tx, key, newValue) {
-        tx.update(this.isValidFlatValue, key, newValue)
-      },
-
-      store(tx, json, parentKey) {
-        return tx.insert(this.typeName, parentKey, () => json)
-      },
-    })
-}
-
-const BooleanNode = createPrimitiveNode(isBoolean)
-  .extend({
-    render(store, key) {
-      const currentValue = this.getFlatValue(store, key)
-
-      return (
-        <input
-          key={key}
-          id={key}
-          data-key={key}
-          type="checkbox"
-          checked={currentValue}
-          onChange={(e) => {
-            store.update((tx) => {
-              this.updateValue(tx, key, e.target.checked)
-            })
-          }}
-        />
-      )
-    },
-  })
-  .finish('boolean')
-
 function createLiteralNode<T extends PrimitiveValue>(value: T) {
-  return createPrimitiveNode((v): v is T => v === value).extend({
+  return definePrimitiveNode((v): v is T => v === value).extend({
     render() {
       return null
     },
