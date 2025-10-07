@@ -1,18 +1,15 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant, isEqual } from 'es-toolkit'
+import { isEqual } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
-import { defineArrayNode } from './nodes/core/define-array-node'
 import { defineNode } from './nodes/core/define-node'
-import { defineNonRootNode } from './nodes/core/define-non-root-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
-import { MultipleChoiceExerciseNode } from './nodes/multiple-choice'
-import { ParagraphNode } from './nodes/paragraph'
+import { DocumentType } from './nodes/document'
 import { getCurrentCursor, setSelection } from './selection'
 import {
   isNonRootKey,
@@ -20,51 +17,6 @@ import {
   type RootKey,
   type Transaction,
 } from './store/types'
-
-function defineUnionNode<
-  C extends [NonRootNodeType, NonRootNodeType, ...NonRootNodeType[]],
->(childTypes: C, getTypeName: (json: JSONValue<C[number]>) => string) {
-  function getChildType(childTypeName: string) {
-    const childType = childTypes.find((ct) => ct.typeName === childTypeName)
-
-    invariant(childType, 'No matching child type found')
-
-    return childType
-  }
-
-  return defineNonRootNode<JSONValue<C[number]>, NonRootKey>().extend({
-    isValidFlatValue: isNonRootKey,
-
-    toJsonValue(store, key) {
-      const childKey = this.getFlatValue(store, key)
-      const childType = getChildType(store.getTypeName(childKey))
-
-      return childType.toJsonValue(store, childKey) as JSONValue<C[number]>
-    },
-
-    store(tx, json, parentKey) {
-      const childType = getChildType(getTypeName(json))
-
-      return tx.insert(this.typeName, parentKey, (key) =>
-        childType.store(tx, json, key),
-      )
-    },
-
-    render(store, key) {
-      const childKey = this.getFlatValue(store, key)
-      const childType = getChildType(store.getTypeName(childKey))
-
-      return childType.render(store, childKey)
-    },
-  })
-}
-
-const DocumentItemType = defineUnionNode(
-  [ParagraphNode, MultipleChoiceExerciseNode],
-  (json) => json.type,
-).finish('documentItem')
-
-const DocumentType = defineArrayNode(DocumentItemType).finish('document')
 
 function defineRootType<CJ>(childType: NonRootNodeType<CJ>) {
   return defineNode<CJ, NonRootKey>()
