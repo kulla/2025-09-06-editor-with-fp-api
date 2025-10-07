@@ -16,3 +16,13 @@ export const isTupleOf =
     value.length === 2 &&
     guard1(value[0]) &&
     guard2(value[1])
+
+export const isKeyOf =
+  <C extends Record<string, unknown>>(obj: C): Guard<keyof C> =>
+  (value: unknown): value is keyof C =>
+    typeof value === 'string' && value in obj
+
+export const isIntersectionOf =
+  <A, B>(guardA: Guard<A>, guardB: Guard<B>): Guard<A & B> =>
+  (value): value is A & B =>
+    guardA(value) && guardB(value)

@@ -6,7 +6,13 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { O } from 'ts-toolbelt'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
-import { type Guard, isArrayOf, isTupleOf } from './guards'
+import {
+  type Guard,
+  isArrayOf,
+  isIntersectionOf,
+  isKeyOf,
+  isTupleOf,
+} from './guards'
 import { getSingletonYDoc } from './store/ydoc'
 
 type RootKey = 'root'
@@ -418,16 +424,6 @@ function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
 }
 
 const ContentNode = createArrayNode(ParagraphNode).finish('content')
-
-const isKeyOf =
-  <C extends Record<string, unknown>>(obj: C): Guard<keyof C> =>
-  (value: unknown): value is keyof C =>
-    typeof value === 'string' && value in obj
-
-const isIntersectionOf =
-  <A, B>(guardA: Guard<A>, guardB: Guard<B>): Guard<A & B> =>
-  (value): value is A & B =>
-    guardA(value) && guardB(value)
 
 function createObjectNode<C extends Record<string, NonRootNodeType>>(
   childTypes: C,
