@@ -143,6 +143,7 @@ export class EditorStore {
         )
 
         this.values.set(rootKey, value)
+        this.parentKeys.set(rootKey, null)
         this.typeNames.set(rootKey, 'root')
 
         return rootKey
@@ -151,8 +152,8 @@ export class EditorStore {
         const newKey = this.generateNextKey()
         const value = createValue(newKey)
 
-        this.parentKeys.set(newKey, parentKey)
         this.values.set(newKey, value)
+        this.parentKeys.set(newKey, parentKey)
         this.typeNames.set(newKey, typeName)
 
         return newKey
