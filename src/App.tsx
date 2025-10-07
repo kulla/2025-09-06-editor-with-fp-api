@@ -1,8 +1,8 @@
 import '@picocss/pico/css/pico.min.css'
 import './App.css'
-import { invariant, isBoolean, isString } from 'es-toolkit'
+import { invariant, isBoolean, isEqual, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import type { O } from 'ts-toolbelt'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
@@ -24,6 +24,7 @@ import {
   type Transaction,
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
+import { getCursor } from './selection'
 
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
@@ -499,6 +500,23 @@ export default function App() {
     store.update((tx) => AppRootType.attachRoot(tx, rootKey, initialValue))
   }, [store])
 
+  const updateCursorFromSelection = useCallback(() => {
+    const selection = document.getSelection()
+    const cursor = getCursor(selection)
+
+    if (!isEqual(cursor, store.getCursor())) {
+      store.update((state) => state.setCursor(cursor))
+    }
+  }, [store])
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', updateCursorFromSelection)
+
+    return () => {
+      document.removeEventListener('selectionchange', updateCursorFromSelection)
+    }
+  }, [updateCursorFromSelection])
+
   return (
     <main className="p-10">
       <h1>Editor</h1>
@@ -511,6 +529,7 @@ export default function App() {
         labels={{
           json: 'JSON representation',
           entries: 'Internal editor store',
+          cursor: 'Current cursor',
         }}
         getCurrentValue={{
           json: () => {
@@ -525,8 +544,9 @@ export default function App() {
 
             return store.getValueEntries().map(stringifyEntry).join('\n')
           },
+          cursor: () => JSON.stringify(store.getCursor(), null, 2),
         }}
-        showOnStartup={{ entries: true, json: true }}
+        showOnStartup={{ entries: true, json: true, cursor: true }}
       />
     </main>
   )

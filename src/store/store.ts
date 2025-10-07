@@ -1,5 +1,6 @@
 import { invariant } from 'es-toolkit'
 import type { Map as YMap } from 'yjs'
+import type { Cursor } from '../selection'
 import type { FlatValue, Key, NonRootKey, Transaction } from './types'
 import { getSingletonYDoc } from './ydoc'
 
@@ -15,6 +16,11 @@ export class EditorStore {
     this.parentKeys = ydoc.getMap('parentKeys')
     this.state = ydoc.getMap('state')
     this.typeNames = ydoc.getMap('typeNames')
+  }
+
+  getCursor() {
+    // TODO: Add a guard to ensure the structure is correct
+    return (this.state.get('cursor') ?? null) as Cursor | null
   }
 
   getValue<F extends FlatValue>(
@@ -115,6 +121,12 @@ export class EditorStore {
         this.typeNames.set(newKey, typeName)
 
         return newKey
+      },
+      setCursor: (cursor) => {
+        this.state.set('cursor', cursor)
+      },
+      setCaret(point) {
+        this.setCursor({ start: point, end: point })
       },
     }
   }

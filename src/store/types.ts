@@ -1,5 +1,6 @@
 import type { Text } from 'yjs'
 import { type Guard, isUnionOf } from '../guards'
+import type { Cursor, Point } from '../selection'
 import type { PrimitiveValue } from '../utils/types'
 
 export type RootKey = 'root'
@@ -31,4 +32,6 @@ export interface Transaction {
     parentKey: Key,
     createValue: (key: NonRootKey) => FlatValue,
   ): NonRootKey
+  setCursor(cursor: Cursor | null): void
+  setCaret(point: Point): void
 }
