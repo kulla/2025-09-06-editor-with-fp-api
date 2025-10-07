@@ -13,7 +13,7 @@ import {
   isKeyOf,
   isTupleOf,
 } from './guards'
-import { getSingletonYDoc } from './store/ydoc'
+import { getSingletonYDoc, loadYDoc } from './store/ydoc'
 
 type RootKey = 'root'
 type NonRootKey = `${number}:${number}`
@@ -647,11 +647,11 @@ export default function App() {
   const { store } = useEditorStore()
 
   useEffect(() => {
-    setTimeout(() => {
+    loadYDoc().then(() => {
       if (store.has(rootKey)) return
 
       store.update((tx) => AppRootType.attachRoot(tx, rootKey, initialValue))
-    }, 1000)
+    })
   }, [store])
 
   return (
