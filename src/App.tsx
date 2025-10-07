@@ -229,8 +229,8 @@ class TypeBuilder<T extends object, I extends object> {
 }
 
 interface NodeType<J = unknown, F = FlatValue> {
-  __Flat?: F
-  __Json?: J
+  FlatValueType?: F
+  JsonValueType?: J
 
   typeName: string
 
@@ -245,9 +245,6 @@ type JSONValue<T extends NodeType> = T extends NodeType<infer J> ? J : never
 
 function createNode<J, F extends FlatValue>() {
   return TypeBuilder.begin<NodeType<J, F>>().extend({
-    __Flat: undefined,
-    __Json: undefined,
-
     getFlatValue(store, key) {
       return store.getValue(this.isValidFlatValue, key)
     },
