@@ -35,7 +35,7 @@ export function getPoint(
 
   const { key, type } = htmlNode.dataset
 
-  if (!isKey(key)) return null
+  if (!isKey(key)) return getPoint(node.parentNode, null)
 
   return type === 'text' && offset != null ? { key, index: offset } : { key }
 }
