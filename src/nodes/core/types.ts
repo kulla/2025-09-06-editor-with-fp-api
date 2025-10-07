@@ -1,6 +1,6 @@
-import type {Guard} from '../../guards'
-import type {EditorStore} from '../../store/store'
-import type {FlatValue, Key, NonRootKey, Transaction} from '../../store/types'
+import type { Guard } from '../../guards'
+import type { EditorStore } from '../../store/store'
+import type { FlatValue, Key, NonRootKey, Transaction } from '../../store/types'
 
 export interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
@@ -15,7 +15,8 @@ export interface NodeType<J = unknown, F = FlatValue> {
   toJsonValue(store: EditorStore, key: Key): J
 }
 
-export interface NonRootNodeType<J = unknown, F = FlatValue> extends NodeType<J, F> {
+export interface NonRootNodeType<J = unknown, F = FlatValue>
+  extends NodeType<J, F> {
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 
