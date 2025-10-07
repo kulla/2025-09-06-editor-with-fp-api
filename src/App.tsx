@@ -16,11 +16,11 @@ import {
 import { getSingletonYDoc } from './store/ydoc'
 
 type RootKey = 'root'
-type NonRootKey = `${number}`
+type NonRootKey = `${number}:${number}`
 type Key = RootKey | NonRootKey
 
 const isNonRootKey = (value: unknown): value is NonRootKey =>
-  typeof value === 'string' && /^[1-9][0-9]*$/.test(value)
+  typeof value === 'string' && /^[0-9]+:[0-9]+$/.test(value)
 
 type PrimitiveValue = string | number | boolean
 type FlatValue =
@@ -167,7 +167,7 @@ export class EditorStore {
   private generateNextKey(): NonRootKey {
     this.lastKeyNumber += 1
 
-    return `${this.lastKeyNumber}`
+    return `${this.ydoc.clientID}:${this.lastKeyNumber}`
   }
 }
 
@@ -672,7 +672,7 @@ export default function App() {
           },
           entries: () => {
             const stringifyEntry = ([key, entry]: [string, unknown]) =>
-              `${padStart(key, 4)}: ${JSON.stringify(entry)}`
+              `${padStart(key, 13)}: ${JSON.stringify(entry)}`
 
             return store.getValueEntries().map(stringifyEntry).join('\n')
           },
