@@ -115,7 +115,7 @@ const TextNode = createNonRootNode<string, Y.Text>()
 
     render(store, key) {
       return (
-        <span key={key} id={key} data-key={key}>
+        <span key={key} id={key} data-key={key} data-type="text">
           {this.toJsonValue(store, key)}
         </span>
       )

@@ -23,7 +23,9 @@ export function loadYDoc(): Promise<Y.Doc> {
     if (!provider) {
       provider = new WebsocketProvider('ws://localhost:1234', 'editor', ydoc)
 
-      provider.on('status', () => resolve(ydoc))
+      provider.on('sync', () => resolve(ydoc))
+      provider.on('connection-error', () => resolve(ydoc))
+      provider.on('connection-close', () => resolve(ydoc))
     } else {
       resolve(ydoc)
     }
