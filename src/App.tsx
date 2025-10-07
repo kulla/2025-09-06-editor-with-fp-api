@@ -5,7 +5,6 @@ import { padStart } from 'es-toolkit/compat'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
 import {
   type Guard,
@@ -18,6 +17,7 @@ import { useEditorStore } from './hooks/use-editor-store'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
+import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
 import type { EditorStore } from './store/store'
 import {
@@ -29,28 +29,6 @@ import {
   type Transaction,
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
-
-const TextNode = defineNonRootNode<string, Y.Text>()
-  .extend({
-    isValidFlatValue: (value) => value instanceof Y.Text,
-
-    toJsonValue(store, key) {
-      return this.getFlatValue(store, key).toString()
-    },
-
-    store(tx, json, parentKey) {
-      return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
-    },
-
-    render(store, key) {
-      return (
-        <span key={key} id={key} data-key={key} data-type="text">
-          {this.toJsonValue(store, key)}
-        </span>
-      )
-    },
-  })
-  .finish('text')
 
 function createPrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
   return defineNonRootNode<V, V>()
