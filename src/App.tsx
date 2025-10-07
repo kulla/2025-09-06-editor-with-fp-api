@@ -13,6 +13,7 @@ import { defineLiteralNode } from './nodes/core/define-literal-nodes'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
+import { ParagraphNode } from './nodes/paragraph'
 import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
 import type { EditorStore } from './store/store'
@@ -24,47 +25,6 @@ import {
   type RootKey,
   type Transaction,
 } from './store/types'
-
-function defineWrappedNode<T extends string, CJ>(
-  typeName: T,
-  childType: NonRootNodeType<CJ, FlatValue>,
-) {
-  return defineNonRootNode<{ type: T; value: CJ }, NonRootKey>()
-    .extendType<{ HtmlTag: React.ElementType }>()
-    .extend({
-      isValidFlatValue: isNonRootKey,
-
-      HtmlTag: 'div',
-
-      toJsonValue(store, key) {
-        const childKey = this.getFlatValue(store, key)
-        const childValue = childType.toJsonValue(store, childKey)
-
-        return { type: typeName, value: childValue }
-      },
-
-      store(tx, json, parentKey) {
-        return tx.insert(typeName, parentKey, (key) =>
-          childType.store(tx, json.value, key),
-        )
-      },
-
-      render(store, key) {
-        const HtmlTag = this.HtmlTag
-        const childKey = this.getFlatValue(store, key)
-
-        return (
-          <HtmlTag key={key} id={key} data-key={key}>
-            {childType.render(store, childKey)}
-          </HtmlTag>
-        )
-      },
-    })
-}
-
-const ParagraphNode = defineWrappedNode('paragraph', TextNode)
-  .extend({ HtmlTag: 'p' })
-  .finish('paragraph')
 
 function defineArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
   return defineNonRootNode<CJ[], NonRootKey[]>()
