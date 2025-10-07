@@ -20,7 +20,7 @@ type NonRootKey = `${number}:${number}`
 type Key = RootKey | NonRootKey
 
 const isNonRootKey = (value: unknown): value is NonRootKey =>
-  typeof value === 'string' && /^[0-9]+:[0-9]+$/.test(value)
+  typeof value === 'string' && /^[0-9]+$/.test(value)
 
 type PrimitiveValue = string | number | boolean
 type FlatValue =
@@ -49,7 +49,6 @@ export class EditorStore {
   protected readonly parentKeys: Y.Map<Key | null>
   protected readonly state: Y.Map<unknown>
   protected readonly typeNames: Y.Map<string>
-  private lastKeyNumber = 0
   private currentTransaction: Transaction | null = null
 
   constructor(private readonly ydoc = getSingletonYDoc()) {
@@ -166,9 +165,13 @@ export class EditorStore {
   }
 
   private generateNextKey(): NonRootKey {
-    this.lastKeyNumber += 1
+    const current = this.state.get('lastKeyNumber') ?? 0
+    invariant(typeof current === 'number', 'lastKeyNumber must be a number')
 
-    return `${this.ydoc.clientID}:${this.lastKeyNumber}`
+    const next = current + 1
+    this.state.set('lastKeyNumber', next)
+
+    return String(next) as NonRootKey
   }
 }
 
@@ -673,7 +676,7 @@ export default function App() {
           },
           entries: () => {
             const stringifyEntry = ([key, entry]: [string, unknown]) =>
-              `${padStart(key, 13)}: ${JSON.stringify(entry)}`
+              `${padStart(key, 4)}: ${JSON.stringify(entry)}`
 
             return store.getValueEntries().map(stringifyEntry).join('\n')
           },
