@@ -2,6 +2,7 @@ import '@picocss/pico/css/pico.min.css'
 import './App.css'
 import { isEqual } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
+import { icons } from 'feather-icons'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -9,9 +10,9 @@ import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
 import { defineRootNode } from './nodes/core/define-root-node'
 import type { JSONValue } from './nodes/core/types'
-import { DocumentType } from './nodes/document'
+import { DocumentItemType, DocumentType } from './nodes/document'
 import { getCurrentCursor, setSelection } from './selection'
-import type { RootKey } from './store/types'
+import type { NonRootKey, RootKey } from './store/types'
 
 const AppRootType = defineRootNode(DocumentType).finish('root')
 const initialValue: JSONValue<typeof AppRootType> = [
@@ -68,14 +69,107 @@ export default function App() {
     }
   }, [store, store.updateCount])
 
+  const addParagraph = useCallback(() => {
+    store.update((tx) => {
+      const documentKey = store.getValue(
+        (v): v is NonRootKey => typeof v === 'string' && v !== 'root',
+        rootKey,
+      )
+
+      // Get current array of child keys
+      const childKeys = store.getValue(
+        (v): v is NonRootKey[] => Array.isArray(v),
+        documentKey,
+      )
+
+      // Create a new paragraph item
+      const newParagraphKey = DocumentItemType.store(
+        tx,
+        { type: 'paragraph', value: 'New paragraph...' },
+        documentKey,
+      )
+
+      // Update the array with the new item
+      tx.update((v): v is NonRootKey[] => Array.isArray(v), documentKey, [
+        ...childKeys,
+        newParagraphKey,
+      ])
+    })
+  }, [store])
+
+  const addMultipleChoice = useCallback(() => {
+    store.update((tx) => {
+      const documentKey = store.getValue(
+        (v): v is NonRootKey => typeof v === 'string' && v !== 'root',
+        rootKey,
+      )
+
+      // Get current array of child keys
+      const childKeys = store.getValue(
+        (v): v is NonRootKey[] => Array.isArray(v),
+        documentKey,
+      )
+
+      // Create a new multiple choice item
+      const newMCKey = DocumentItemType.store(
+        tx,
+        {
+          type: 'multipleChoiceExercise',
+          exercise: [{ type: 'paragraph', value: 'What is 2 + 2?' }],
+          answers: [
+            { isCorrect: false, text: '3' },
+            { isCorrect: true, text: '4' },
+            { isCorrect: false, text: '5' },
+          ],
+        },
+        documentKey,
+      )
+
+      // Update the array with the new item
+      tx.update((v): v is NonRootKey[] => Array.isArray(v), documentKey, [
+        ...childKeys,
+        newMCKey,
+      ])
+    })
+  }, [store])
+
   return (
-    <main className="p-10">
+    <main className="prose p-10">
       <h1>Editor</h1>
-      {store.has(rootKey) ? (
-        AppRootType.render(store, rootKey)
-      ) : (
-        <p>Loading editor...</p>
-      )}
+      <div className="rounded-2xl border-2 border-blue-800 px-4">
+        {store.has(rootKey) ? (
+          AppRootType.render(store, rootKey)
+        ) : (
+          <p>Loading editor...</p>
+        )}
+
+        <div className="flex flex-row gap-2 mb-4 mt-8 border-t-2 border-t-blue-800 pt-4">
+          <button
+            type="button"
+            onClick={addMultipleChoice}
+            className="btn btn-accent"
+          >
+            <img
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(icons['check-circle'].toSvg())}`}
+              className="inline mr-2"
+              alt=""
+            />
+            Add Multiple Choice
+          </button>
+          <button
+            type="button"
+            onClick={addParagraph}
+            className="btn btn-warning"
+          >
+            <img
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(icons['align-left'].toSvg())}`}
+              className="inline mr-2"
+              alt=""
+            />
+            Add Paragraph
+          </button>
+        </div>
+      </div>
       <DebugPanel
         labels={{
           html: 'HTML representation',

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+main {
+  max-width: inherit;
+}
+
 .multipleChoiceExercise {
   @apply p-4 mb-2 rounded-lg shadow-md bg-gray-100 dark:bg-gray-800 border-0;
 }
@@ -11,6 +15,16 @@
 
 .multipleChoiceAnswer > label {
   @apply flex items-center gap-2 cursor-pointer;
+}
+
+span.text::after {
+  /* Render &nbsp; as a non-breaking space so that the span does not collapse */
+  content: "\0000A0";
+}
+
+p {
+  margin-top: 1em;
+  margin-bottom: 0.75em;
 }
 
 article {
