@@ -12,3 +12,11 @@
 .multipleChoiceAnswer > label {
   @apply flex items-center gap-2 cursor-pointer;
 }
+
+article {
+  caret-color: transparent;
+}
+
+span[data-type="text"] {
+  caret-color: auto;
+}
