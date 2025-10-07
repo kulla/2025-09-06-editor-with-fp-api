@@ -7,7 +7,7 @@ import {
 import { defineNode } from './define-node'
 import type { NonRootNodeType } from './types'
 
-export function defineRootType<CJ>(childType: NonRootNodeType<CJ>) {
+export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
   return defineNode<CJ, NonRootKey>()
     .extendType<{
       attachRoot(tx: Transaction, rootKey: RootKey, json: CJ): void
