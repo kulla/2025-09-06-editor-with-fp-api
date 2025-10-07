@@ -25,7 +25,7 @@ import {
   type Transaction,
 } from './store/types'
 
-function createWrappedNode<T extends string, CJ>(
+function defineWrappedNode<T extends string, CJ>(
   typeName: T,
   childType: NonRootNodeType<CJ, FlatValue>,
 ) {
@@ -62,11 +62,11 @@ function createWrappedNode<T extends string, CJ>(
     })
 }
 
-const ParagraphNode = createWrappedNode('paragraph', TextNode)
+const ParagraphNode = defineWrappedNode('paragraph', TextNode)
   .extend({ HtmlTag: 'p' })
   .finish('paragraph')
 
-function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
+function defineArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
   return defineNonRootNode<CJ[], NonRootKey[]>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
@@ -104,9 +104,9 @@ function createArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
     })
 }
 
-const ContentNode = createArrayNode(ParagraphNode).finish('content')
+const ContentNode = defineArrayNode(ParagraphNode).finish('content')
 
-function createObjectNode<C extends Record<string, NonRootNodeType>>(
+function defineObjectNode<C extends Record<string, NonRootNodeType>>(
   childTypes: C,
   keyOrder: (keyof C)[],
 ) {
@@ -179,7 +179,7 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
     })
 }
 
-const MultipleChoiceAnswerNode = createObjectNode(
+const MultipleChoiceAnswerNode = defineObjectNode(
   { isCorrect: BooleanNode, text: TextNode },
   ['isCorrect', 'text'],
 )
@@ -198,11 +198,11 @@ const MultipleChoiceAnswerNode = createObjectNode(
   })
   .finish('multipleChoiceAnswer')
 
-const MultipleChoiceAnswersNode = createArrayNode(MultipleChoiceAnswerNode)
+const MultipleChoiceAnswersNode = defineArrayNode(MultipleChoiceAnswerNode)
   .extend({ HtmlTag: 'ul' })
   .finish('multipleChoiceAnswers')
 
-const MultipleChoiceExerciseNode = createObjectNode(
+const MultipleChoiceExerciseNode = defineObjectNode(
   {
     type: defineLiteralNode('multipleChoiceExercise').finish(
       'literal:multipleChoiceExercise',
@@ -239,7 +239,7 @@ const MultipleChoiceExerciseNode = createObjectNode(
   })
   .finish('multipleChoiceExercise')
 
-function createUnionNode<
+function defineUnionNode<
   C extends [NonRootNodeType, NonRootNodeType, ...NonRootNodeType[]],
 >(childTypes: C, getTypeName: (json: JSONValue<C[number]>) => string) {
   function getChildType(childTypeName: string) {
@@ -277,14 +277,14 @@ function createUnionNode<
   })
 }
 
-const DocumentItemType = createUnionNode(
+const DocumentItemType = defineUnionNode(
   [ParagraphNode, MultipleChoiceExerciseNode],
   (json) => json.type,
 ).finish('documentItem')
 
-const DocumentType = createArrayNode(DocumentItemType).finish('document')
+const DocumentType = defineArrayNode(DocumentItemType).finish('document')
 
-function RootType<CJ>(childType: NonRootNodeType<CJ>) {
+function defineRootType<CJ>(childType: NonRootNodeType<CJ>) {
   return defineNode<CJ, NonRootKey>()
     .extendType<{
       attachRoot(tx: Transaction, rootKey: RootKey, json: CJ): void
@@ -320,7 +320,7 @@ function RootType<CJ>(childType: NonRootNodeType<CJ>) {
 }
 
 type AppRootType = typeof AppRootType
-const AppRootType = RootType(DocumentType).finish('root')
+const AppRootType = defineRootType(DocumentType).finish('root')
 const initialValue: JSONValue<AppRootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
