@@ -506,11 +506,27 @@ function createObjectNode<C extends Record<string, NonRootNodeType>>(
 const MultipleChoiceAnswerNode = createObjectNode(
   { isCorrect: BooleanNode, text: TextNode },
   ['isCorrect', 'text'],
-).finish('multipleChoiceAnswer')
+)
+  .extend({
+    render(store, key) {
+      const isCorrectKey = this.getPropKey(store, key, 'isCorrect')
+      const textKey = this.getPropKey(store, key, 'text')
 
-const MultipleChoiceAnswersNode = createArrayNode(
-  MultipleChoiceAnswerNode,
-).finish('multipleChoiceAnswers')
+      return (
+        <li key={key} id={key} data-key={key} className={this.typeName}>
+          <label htmlFor={isCorrectKey}>
+            {BooleanNode.render(store, isCorrectKey)}
+            {TextNode.render(store, textKey)}
+          </label>
+        </li>
+      )
+    },
+  })
+  .finish('multipleChoiceAnswer')
+
+const MultipleChoiceAnswersNode = createArrayNode(MultipleChoiceAnswerNode)
+  .extend({ HtmlTag: 'ul' })
+  .finish('multipleChoiceAnswers')
 
 const MultipleChoiceExerciseNode = createObjectNode(
   {
@@ -528,22 +544,22 @@ const MultipleChoiceExerciseNode = createObjectNode(
       const answersKey = this.getPropKey(store, key, 'answers')
 
       return (
-        <div
+        <fieldset
           key={key}
           id={key}
           data-key={key}
           className="multipleChoiceExercise"
         >
-          <div className="exercise">
-            <p>
-              <strong>Multiple Choice Exercise:</strong>
-            </p>
+          <div className="exercise block">
+            <legend className="mt-2">
+              <strong>Multiple Choice Exercise</strong>
+            </legend>
             {ContentNode.render(store, exerciseKey)}
           </div>
           <div className="answers">
             {MultipleChoiceAnswersNode.render(store, answersKey)}
           </div>
-        </div>
+        </fieldset>
       )
     },
   })
