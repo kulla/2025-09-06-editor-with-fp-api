@@ -18,16 +18,12 @@ export function loadYDoc(): Promise<Y.Doc> {
   }
 
   ydocPromise = new Promise((resolve) => {
-    if (!ydoc) {
-      ydoc = new Y.Doc()
-    }
+    const ydoc = getSingletonYDoc()
 
     if (!provider) {
       provider = new WebsocketProvider('ws://localhost:1234', 'editor', ydoc)
 
-      provider.on('synced', () => {
-        resolve(ydoc as Y.Doc)
-      })
+      provider.on('status', () => resolve(ydoc))
     } else {
       resolve(ydoc)
     }
