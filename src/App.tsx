@@ -2,7 +2,9 @@ import '@picocss/pico/css/pico.min.css'
 import './App.css'
 import { invariant, isBoolean, isEqual, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
+import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import type { O } from 'ts-toolbelt'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
@@ -530,11 +532,23 @@ export default function App() {
       )}
       <DebugPanel
         labels={{
+          html: 'HTML representation',
           json: 'JSON representation',
           entries: 'Internal editor store',
           cursor: 'Current cursor',
         }}
         getCurrentValue={{
+          html: () => {
+            // Render with RenderServer
+            if (!store.has(rootKey)) return ''
+
+            const reactNode = AppRootType.render(store, rootKey)
+
+            return beautifyHtml(renderToStaticMarkup(reactNode), {
+              indent_size: 2,
+              wrap_line_length: 70,
+            })
+          },
           json: () => {
             if (!store.has(rootKey)) return ''
 
@@ -549,7 +563,7 @@ export default function App() {
           },
           cursor: () => JSON.stringify(store.getCursor(), null, 2),
         }}
-        showOnStartup={{ entries: true, json: true, cursor: true }}
+        showOnStartup={{ entries: true, json: true, cursor: true, html: true }}
       />
     </main>
   )
