@@ -3,4 +3,21 @@
 
 .multipleChoiceExercise {
   @apply p-4 mb-4 rounded-lg shadow-md bg-gray-100 dark:bg-gray-800;
+  border: none;
+}
+
+.multipleChoiceExercise legend {
+  @apply mb-2;
+}
+
+.multipleChoiceExercise ul {
+  @apply list-none p-0 m-0;
+}
+
+.multipleChoiceExercise li {
+  @apply mb-2;
+}
+
+.multipleChoiceExercise label {
+  @apply flex items-center gap-2 cursor-pointer;
 }
