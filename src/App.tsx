@@ -24,7 +24,7 @@ import {
   type Transaction,
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
-import { getCursor } from './selection'
+import { getCursor, setSelection } from './selection'
 
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
@@ -514,6 +514,11 @@ export default function App() {
       document.removeEventListener('selectionchange', updateCursorFromSelection)
     }
   }, [updateCursorFromSelection])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Use updateCount to trigger re-render for each state change
+  useEffect(() => {
+    setSelection(store.getCursor())
+  }, [store, store.updateCount])
 
   return (
     <main className="p-10">
