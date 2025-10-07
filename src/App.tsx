@@ -16,6 +16,7 @@ import {
   isTupleOf,
 } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
+import { getCursor, setSelection } from './selection'
 import type { EditorStore } from './store/store'
 import {
   type FlatValue,
@@ -26,7 +27,6 @@ import {
   type Transaction,
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
-import { getCursor, setSelection } from './selection'
 
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
