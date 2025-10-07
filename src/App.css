@@ -1,5 +1,6 @@
 @import "tailwindcss";
-/* biome-ignore lint/suspicious/noUnknownAtRules: See https://github.com/biomejs/biome/issues/7223 */
-@plugin "@tailwindcss/typography";
-/* biome-ignore lint/suspicious/noUnknownAtRules: See https://github.com/biomejs/biome/issues/7223 */
 @plugin "daisyui";
+
+.multipleChoiceExercise {
+  @apply p-4 mb-4 rounded-lg shadow-md bg-gray-100 dark:bg-gray-800;
+}
