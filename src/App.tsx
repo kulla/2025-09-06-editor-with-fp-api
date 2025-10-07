@@ -16,6 +16,7 @@ import {
 } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
 import { TypeBuilder } from './nodes/core/type-builder'
+import type { JSONValue, NodeType } from './nodes/core/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { EditorStore } from './store/store'
 import {
@@ -27,21 +28,6 @@ import {
   type Transaction,
 } from './store/types'
 import type { PrimitiveValue } from './utils/types'
-
-interface NodeType<J = unknown, F = FlatValue> {
-  FlatValueType?: F
-  JsonValueType?: J
-
-  typeName: string
-
-  isValidFlatValue: Guard<F>
-  getFlatValue(store: EditorStore, key: Key): F
-  getParentKey(store: EditorStore, key: Key): Key | null
-  render(store: EditorStore, key: Key): React.ReactNode
-  toJsonValue(store: EditorStore, key: Key): J
-}
-
-type JSONValue<T extends NodeType> = T extends NodeType<infer J> ? J : never
 
 function createNode<J, F extends FlatValue>() {
   return TypeBuilder.begin<NodeType<J, F>>().extend({

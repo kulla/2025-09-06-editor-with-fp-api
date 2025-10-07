@@ -1,11 +1,11 @@
-import type {O} from 'ts-toolbelt'
+import type { O } from 'ts-toolbelt'
 
 export class TypeBuilder<T extends object, I extends object> {
   constructor(public readonly impl: I) {}
 
   extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
     const extension = typeof ext === 'function' ? ext(this.impl) : ext
-    const newImpl = {...this.impl, ...extension} as O.Merge<I, I2>
+    const newImpl = { ...this.impl, ...extension } as O.Merge<I, I2>
 
     return new TypeBuilder<T, O.Merge<I, I2>>(newImpl)
   }
@@ -15,7 +15,7 @@ export class TypeBuilder<T extends object, I extends object> {
   }
 
   finish(this: TypeBuilder<T, Omit<T, 'typeName'>>, typeName: string): T {
-    return {...this.impl, typeName} as T
+    return { ...this.impl, typeName } as T
   }
 
   static begin<Target extends object>(): TypeBuilder<Target, object>
@@ -27,6 +27,6 @@ export class TypeBuilder<T extends object, I extends object> {
 
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
-  ? (this: T, ...args: A) => R
-  : T[K]
+    ? (this: T, ...args: A) => R
+    : T[K]
 }
