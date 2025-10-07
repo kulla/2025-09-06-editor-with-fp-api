@@ -319,9 +319,8 @@ function defineRootType<CJ>(childType: NonRootNodeType<CJ>) {
     })
 }
 
-type AppRootType = typeof AppRootType
 const AppRootType = defineRootType(DocumentType).finish('root')
-const initialValue: JSONValue<AppRootType> = [
+const initialValue: JSONValue<typeof AppRootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
     type: 'paragraph',
