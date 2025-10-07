@@ -17,6 +17,7 @@
     "es-toolkit": "^1.39.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "ts-toolbelt": "^9.6.0",
     "yjs": "^13.6.27"
   },
   "devDependencies": {
