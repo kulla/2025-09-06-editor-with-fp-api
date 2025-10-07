@@ -7,9 +7,9 @@ export type NonRootKey = `${number}:${number}`
 export type Key = RootKey | NonRootKey
 
 export const isRootKey: Guard<RootKey> = (value) => value === 'root'
-export const isNonRootKey = (value: unknown): value is NonRootKey =>
+export const isNonRootKey: Guard<NonRootKey> = (value): value is NonRootKey =>
   typeof value === 'string' && /^[0-9]+$/.test(value)
-export const isKey = isUnionOf(isRootKey, isNonRootKey)
+export const isKey: Guard<Key> = isUnionOf(isRootKey, isNonRootKey)
 
 // TODO: Maybe we can remove this type or simplify it
 export type FlatValue =
