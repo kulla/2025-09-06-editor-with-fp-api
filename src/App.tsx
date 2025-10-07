@@ -23,7 +23,6 @@ import {
   type RootKey,
   type Transaction,
 } from './store/types'
-import { loadYDoc } from './store/ydoc'
 import type { PrimitiveValue } from './utils/types'
 
 type Abstract<T extends object> = {
@@ -495,11 +494,9 @@ export default function App() {
   const { store } = useEditorStore()
 
   useEffect(() => {
-    loadYDoc().then(() => {
-      if (store.has(rootKey)) return
+    if (store.has(rootKey)) return
 
-      store.update((tx) => AppRootType.attachRoot(tx, rootKey, initialValue))
-    })
+    store.update((tx) => AppRootType.attachRoot(tx, rootKey, initialValue))
   }, [store])
 
   return (
