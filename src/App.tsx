@@ -8,9 +8,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
 import { isArrayOf, isIntersectionOf, isKeyOf, isTupleOf } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
+import { BooleanNode } from './nodes/boolean'
+import { defineLiteralNode } from './nodes/core/define-literal-nodes'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
-import { definePrimitiveNode } from './nodes/core/define-primitive-node'
 import type { JSONValue, NonRootNodeType } from './nodes/core/types'
 import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
@@ -23,15 +24,6 @@ import {
   type RootKey,
   type Transaction,
 } from './store/types'
-import type { PrimitiveValue } from './utils/types'
-
-function createLiteralNode<T extends PrimitiveValue>(value: T) {
-  return definePrimitiveNode((v): v is T => v === value).extend({
-    render() {
-      return null
-    },
-  })
-}
 
 function createWrappedNode<T extends string, CJ>(
   typeName: T,
@@ -212,7 +204,7 @@ const MultipleChoiceAnswersNode = createArrayNode(MultipleChoiceAnswerNode)
 
 const MultipleChoiceExerciseNode = createObjectNode(
   {
-    type: createLiteralNode('multipleChoiceExercise').finish(
+    type: defineLiteralNode('multipleChoiceExercise').finish(
       'literal:multipleChoiceExercise',
     ),
     exercise: ContentNode,
