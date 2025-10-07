@@ -9,6 +9,8 @@ import { DebugPanel } from './components/debug-panel'
 import { isArrayOf, isIntersectionOf, isKeyOf, isTupleOf } from './guards'
 import { useEditorStore } from './hooks/use-editor-store'
 import { BooleanNode } from './nodes/boolean'
+import { ContentNode } from './nodes/content'
+import { defineArrayNode } from './nodes/core/define-array-node'
 import { defineLiteralNode } from './nodes/core/define-literal-nodes'
 import { defineNode } from './nodes/core/define-node'
 import { defineNonRootNode } from './nodes/core/define-non-root-node'
@@ -18,53 +20,12 @@ import { TextNode } from './nodes/text'
 import { getCurrentCursor, setSelection } from './selection'
 import type { EditorStore } from './store/store'
 import {
-  type FlatValue,
   isNonRootKey,
   type Key,
   type NonRootKey,
   type RootKey,
   type Transaction,
 } from './store/types'
-
-function defineArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
-  return defineNonRootNode<CJ[], NonRootKey[]>()
-    .extendType<{ HtmlTag: React.ElementType }>()
-    .extend({
-      isValidFlatValue: isArrayOf(isNonRootKey),
-
-      HtmlTag: 'div',
-
-      toJsonValue(store, key) {
-        const childKeys = this.getFlatValue(store, key)
-        return childKeys.map((childKey) =>
-          childType.toJsonValue(store, childKey),
-        )
-      },
-
-      store(tx, json, parentKey) {
-        return tx.insert(this.typeName, parentKey, (key) =>
-          json.map((item) => childType.store(tx, item, key)),
-        )
-      },
-
-      render(store, key) {
-        const HtmlTag = this.HtmlTag
-        const childKeys = this.getFlatValue(store, key)
-
-        const children = childKeys.map((childKey) =>
-          childType.render(store, childKey),
-        )
-
-        return (
-          <HtmlTag key={key} id={key} data-key={key}>
-            {children}
-          </HtmlTag>
-        )
-      },
-    })
-}
-
-const ContentNode = defineArrayNode(ParagraphNode).finish('content')
 
 function defineObjectNode<C extends Record<string, NonRootNodeType>>(
   childTypes: C,
