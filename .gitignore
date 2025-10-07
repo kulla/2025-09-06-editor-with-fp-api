@@ -1,3 +1,7 @@
+# GitHub copilot seems to use npm => Since we use bun we do not want to
+# commit package-lock.json
+package-lock.json
+
 # Local
 .DS_Store
 *.local
