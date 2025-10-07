@@ -340,10 +340,8 @@ const MultipleChoiceAnswerNode = createObjectNode(
 
       return (
         <li key={key} id={key} data-key={key} className={this.typeName}>
-          <label htmlFor={isCorrectKey}>
-            {BooleanNode.render(store, isCorrectKey)}
-            {TextNode.render(store, textKey)}
-          </label>
+          {BooleanNode.render(store, isCorrectKey)}
+          {TextNode.render(store, textKey)}
         </li>
       )
     },
