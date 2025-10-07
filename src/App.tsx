@@ -563,7 +563,12 @@ export default function App() {
           },
           cursor: () => JSON.stringify(store.getCursor(), null, 2),
         }}
-        showOnStartup={{ entries: true, json: true, cursor: true, html: true }}
+        showOnStartup={{
+          entries: false,
+          json: true,
+          cursor: false,
+          html: true,
+        }}
       />
     </main>
   )
