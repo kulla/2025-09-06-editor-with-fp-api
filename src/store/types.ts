@@ -1,13 +1,15 @@
 import type { Text } from 'yjs'
-import type { Guard } from '../guards'
+import { type Guard, isUnionOf } from '../guards'
 import type { PrimitiveValue } from '../utils/types'
 
 export type RootKey = 'root'
 export type NonRootKey = `${number}:${number}`
 export type Key = RootKey | NonRootKey
 
+export const isRootKey: Guard<RootKey> = (value) => value === 'root'
 export const isNonRootKey = (value: unknown): value is NonRootKey =>
   typeof value === 'string' && /^[0-9]+$/.test(value)
+export const isKey = isUnionOf(isRootKey, isNonRootKey)
 
 // TODO: Maybe we can remove this type or simplify it
 export type FlatValue =
