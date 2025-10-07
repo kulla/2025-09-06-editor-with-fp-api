@@ -2,7 +2,7 @@ import '@picocss/pico/css/pico.min.css'
 import './App.css'
 import { invariant, isBoolean, isString } from 'es-toolkit'
 import { padStart } from 'es-toolkit/compat'
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import type { O } from 'ts-toolbelt'
 import * as Y from 'yjs'
 import { DebugPanel } from './components/debug-panel'
@@ -13,189 +13,18 @@ import {
   isKeyOf,
   isTupleOf,
 } from './guards'
-import { getSingletonYDoc, loadYDoc } from './store/ydoc'
-
-type RootKey = 'root'
-type NonRootKey = `${number}:${number}`
-type Key = RootKey | NonRootKey
-
-const isNonRootKey = (value: unknown): value is NonRootKey =>
-  typeof value === 'string' && /^[0-9]+$/.test(value)
-
-type PrimitiveValue = string | number | boolean
-type FlatValue =
-  | PrimitiveValue
-  | Y.Text
-  | NonRootKey
-  | NonRootKey[]
-  | [string, NonRootKey][]
-
-interface Transaction {
-  update<F extends FlatValue>(
-    guard: Guard<F>,
-    key: Key,
-    updateFn: F | ((current: F) => F),
-  ): void
-  attachRoot(rootKey: RootKey, value: NonRootKey): void
-  insert<T extends string>(
-    typeName: T,
-    parentKey: Key,
-    createValue: (key: NonRootKey) => FlatValue,
-  ): NonRootKey
-}
-
-export class EditorStore {
-  protected readonly values: Y.Map<FlatValue>
-  protected readonly parentKeys: Y.Map<Key | null>
-  protected readonly state: Y.Map<unknown>
-  protected readonly typeNames: Y.Map<string>
-  private currentTransaction: Transaction | null = null
-
-  constructor(private readonly ydoc = getSingletonYDoc()) {
-    this.values = ydoc.getMap('values')
-    this.parentKeys = ydoc.getMap('parentKeys')
-    this.state = ydoc.getMap('state')
-    this.typeNames = ydoc.getMap('typeNames')
-  }
-
-  getValue<F extends FlatValue>(
-    guard: (value: FlatValue) => value is F,
-    key: Key,
-  ): F {
-    const value = this.values.get(key)
-
-    invariant(value != null, `Value for key ${key} not found`)
-    invariant(guard(value), `Value for key ${key} has unexpected type`)
-
-    return value
-  }
-
-  getTypeName(key: Key): string {
-    const typeName = this.typeNames.get(key)
-
-    invariant(typeName != null, `Type name for key ${key} not found`)
-
-    return typeName
-  }
-
-  getParentKey(key: Key): Key | null {
-    return this.parentKeys.get(key) ?? null
-  }
-
-  has(key: Key): boolean {
-    return this.values.has(key)
-  }
-
-  getValueEntries() {
-    return Array.from(this.values.entries())
-  }
-
-  get updateCount() {
-    const count = this.state.get('updateCount') ?? 0
-
-    invariant(typeof count === 'number', 'updateCount must be a number')
-
-    return count
-  }
-
-  addUpdateListener(listener: () => void) {
-    this.ydoc.on('update', listener)
-  }
-
-  removeUpdateListener(listener: () => void) {
-    this.ydoc.off('update', listener)
-  }
-
-  update(updateFn: (tx: Transaction) => void) {
-    if (this.currentTransaction) {
-      // If we're already in a transaction, just call the update function directly
-      updateFn(this.currentTransaction)
-      return
-    } else {
-      this.ydoc.transact(() => {
-        this.currentTransaction = this.createNewTransaction()
-
-        try {
-          updateFn(this.currentTransaction)
-
-          this.incrementUpdateCount()
-        } finally {
-          this.currentTransaction = null
-        }
-      })
-    }
-  }
-
-  private createNewTransaction(): Transaction {
-    return {
-      update: (guard, key, updateFn) => {
-        const currentValue = this.getValue(guard, key)
-        const newValue =
-          typeof updateFn === 'function' ? updateFn(currentValue) : updateFn
-
-        this.values.set(key, newValue)
-      },
-      attachRoot: (rootKey, value) => {
-        invariant(
-          !this.has(rootKey),
-          `Root key ${rootKey} already exists in the store`,
-        )
-
-        this.values.set(rootKey, value)
-        this.parentKeys.set(rootKey, null)
-        this.typeNames.set(rootKey, 'root')
-
-        return rootKey
-      },
-      insert: (typeName, parentKey, createValue) => {
-        const newKey = this.generateNextKey()
-        const value = createValue(newKey)
-
-        this.values.set(newKey, value)
-        this.parentKeys.set(newKey, parentKey)
-        this.typeNames.set(newKey, typeName)
-
-        return newKey
-      },
-    }
-  }
-
-  private incrementUpdateCount() {
-    this.state.set('updateCount', this.updateCount + 1)
-  }
-
-  private generateNextKey(): NonRootKey {
-    const current = this.state.get('lastKeyNumber') ?? 0
-    invariant(typeof current === 'number', 'lastKeyNumber must be a number')
-
-    const next = current + 1
-    this.state.set('lastKeyNumber', next)
-
-    return String(next) as NonRootKey
-  }
-}
-
-export function useEditorStore() {
-  const store = useRef(new EditorStore()).current
-  const lastReturn = useRef({ store, updateCount: store.updateCount })
-
-  return useSyncExternalStore(
-    (listener) => {
-      store.addUpdateListener(listener)
-
-      return () => store.removeUpdateListener(listener)
-    },
-    () => {
-      if (lastReturn.current.updateCount === store.updateCount) {
-        return lastReturn.current
-      }
-
-      lastReturn.current = { store, updateCount: store.updateCount }
-
-      return lastReturn.current
-    },
-  )
-}
+import { useEditorStore } from './hooks/use-editor-store'
+import type { EditorStore } from './store/store'
+import {
+  type FlatValue,
+  isNonRootKey,
+  type Key,
+  type NonRootKey,
+  type RootKey,
+  type Transaction,
+} from './store/types'
+import { loadYDoc } from './store/ydoc'
+import type { PrimitiveValue } from './utils/types'
 
 type Abstract<T extends object> = {
   [K in keyof T]?: T[K] extends (...args: infer A) => infer R
