@@ -510,13 +510,12 @@ const MultipleChoiceAnswerNode = createObjectNode(
     render(store, key) {
       const isCorrectKey = this.getPropKey(store, key, 'isCorrect')
       const textKey = this.getPropKey(store, key, 'text')
-      const textValue = TextNode.toJsonValue(store, textKey)
 
       return (
-        <li key={key} id={key} data-key={key}>
+        <li key={key} id={key} data-key={key} className={this.typeName}>
           <label htmlFor={isCorrectKey}>
             {BooleanNode.render(store, isCorrectKey)}
-            <span>{textValue}</span>
+            {TextNode.render(store, textKey)}
           </label>
         </li>
       )
@@ -525,9 +524,7 @@ const MultipleChoiceAnswerNode = createObjectNode(
   .finish('multipleChoiceAnswer')
 
 const MultipleChoiceAnswersNode = createArrayNode(MultipleChoiceAnswerNode)
-  .extend({
-    HtmlTag: 'ul' as const,
-  })
+  .extend({ HtmlTag: 'ul' })
   .finish('multipleChoiceAnswers')
 
 const MultipleChoiceExerciseNode = createObjectNode(
@@ -552,10 +549,10 @@ const MultipleChoiceExerciseNode = createObjectNode(
           data-key={key}
           className="multipleChoiceExercise"
         >
-          <legend>
-            <strong>Multiple Choice Exercise</strong>
-          </legend>
-          <div className="exercise">
+          <div className="exercise block">
+            <legend className="mt-2">
+              <strong>Multiple Choice Exercise</strong>
+            </legend>
             {ContentNode.render(store, exerciseKey)}
           </div>
           <div className="answers">

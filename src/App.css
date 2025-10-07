@@ -2,22 +2,13 @@
 @plugin "daisyui";
 
 .multipleChoiceExercise {
-  @apply p-4 mb-4 rounded-lg shadow-md bg-gray-100 dark:bg-gray-800;
-  border: none;
+  @apply p-4 mb-2 rounded-lg shadow-md bg-gray-100 dark:bg-gray-800 border-0;
 }
 
-.multipleChoiceExercise legend {
-  @apply mb-2;
+.multipleChoiceAnswer {
+  @apply mb-2 list-none;
 }
 
-.multipleChoiceExercise ul {
-  @apply list-none p-0 m-0;
-}
-
-.multipleChoiceExercise li {
-  @apply mb-2;
-}
-
-.multipleChoiceExercise label {
+.multipleChoiceAnswer > label {
   @apply flex items-center gap-2 cursor-pointer;
 }
