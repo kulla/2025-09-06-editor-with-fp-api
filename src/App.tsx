@@ -456,7 +456,14 @@ function RootType<CJ>(childType: NonRootNodeType<CJ>) {
       render(store, key) {
         const childKey = this.getFlatValue(store, key)
         return (
-          <article key={key} id={key} data-key={key}>
+          <article
+            key={key}
+            id={key}
+            data-key={key}
+            contentEditable
+            suppressContentEditableWarning
+            spellCheck={false}
+          >
             {childType.render(store, childKey)}
           </article>
         )
