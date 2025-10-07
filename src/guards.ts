@@ -26,3 +26,8 @@ export const isIntersectionOf =
   <A, B>(guardA: Guard<A>, guardB: Guard<B>): Guard<A & B> =>
   (value): value is A & B =>
     guardA(value) && guardB(value)
+
+export const isUnionOf =
+  <A, B>(guardA: Guard<A>, guardB: Guard<B>): Guard<A | B> =>
+  (value): value is A | B =>
+    guardA(value) || guardB(value)
