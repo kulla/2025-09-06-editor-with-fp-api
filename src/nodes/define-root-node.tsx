@@ -1,4 +1,4 @@
-import type { EditorStore } from '../store/store'
+import type {EditorStore} from '../store/store'
 import {
   isNonRootKey,
   type Key,
@@ -6,9 +6,9 @@ import {
   type RootKey,
   type Transaction,
 } from '../store/types'
-import { defineNode } from './define-node'
-import { NoIndexTrait } from './node-path'
-import type { NonRootNodeType } from './types'
+import {defineNode} from './define-node'
+import {NoIndexTrait} from './node-path'
+import type {NonRootNodeType} from './types'
 
 export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
   return defineNode<CJ, NonRootKey>()
@@ -42,7 +42,6 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
-            // @ts-expect-error-error React types are wrong
             onKeyDown={onKeyDown}
           >
             {childType.render(store, childKey)}
