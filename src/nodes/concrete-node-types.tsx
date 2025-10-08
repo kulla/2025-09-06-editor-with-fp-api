@@ -1,17 +1,17 @@
-import { invariant, isBoolean } from 'es-toolkit'
+import {invariant, isBoolean} from 'es-toolkit'
 import * as Y from 'yjs'
-import type { EditorStore } from '../store/store'
-import type { Key } from '../store/types'
-import { defineArrayNode } from './define-array-node'
-import { defineLiteralNode } from './define-literal-nodes'
-import { defineNonRootNode } from './define-non-root-node'
-import { defineObjectNode } from './define-object-node'
-import { definePrimitiveNode } from './define-primitive-node'
-import { defineRootNode } from './define-root-node'
-import { defineUnionNode } from './define-union-node'
-import { defineWrappedNode } from './define-wrapped-node'
-import { NoIndexTrait } from './node-path'
-import type { NodeType } from './types'
+import type {EditorStore} from '../store/store'
+import type {Key} from '../store/types'
+import {defineArrayNode} from './define-array-node'
+import {defineLiteralNode} from './define-literal-nodes'
+import {defineNonRootNode} from './define-non-root-node'
+import {defineObjectNode} from './define-object-node'
+import {definePrimitiveNode} from './define-primitive-node'
+import {defineRootNode} from './define-root-node'
+import {defineUnionNode} from './define-union-node'
+import {defineWrappedNode} from './define-wrapped-node'
+import {NoIndexTrait} from './node-path'
+import type {NodeType} from './types'
 
 export const TextType = defineNonRootNode<string, Y.Text>()
   .extend({
@@ -33,20 +33,48 @@ export const TextType = defineNonRootNode<string, Y.Text>()
       )
     },
 
-    onCommand: {
-      insertText(tx, _store, key, [index], [endIndex], text) {
-        if (typeof index !== 'number' || typeof endIndex !== 'number')
-          return false
-        if (index == null || index !== endIndex) return false
+    insertText({tx, key}, [index], [endIndex], text) {
+      if (typeof index !== 'number') return false
+      if (index == null || index !== endIndex) return false
 
-        tx.update(TextType.isValidFlatValue, key, (prev) => {
-          prev.insert(index, text)
-          return prev
-        })
-        tx.setCaret({ key, index: index + text.length })
+      tx.update(this.isValidFlatValue, key, (prev) => {
+        prev.insert(index, text)
+        return prev
+      })
+      tx.setCaret({key, index: index + text.length})
 
-        return true
-      },
+      return true
+    },
+
+    deleteForward({store, tx, key}, [index], [endIndex]) {
+      if (typeof index !== 'number') return false
+      if (index == null || index !== endIndex) return false
+
+      const currentValue = this.getFlatValue(store, key).toString()
+
+      if (index >= currentValue.length) return false
+
+      tx.update(this.isValidFlatValue, key, (prev) => {
+        prev.delete(index, 1)
+        return prev
+      })
+      tx.setCaret({key: key, index})
+
+      return true
+    },
+
+    deleteBackward({tx, key}, [index], [endIndex]) {
+      if (typeof index !== 'number') return false
+      if (index == null || index !== endIndex) return false
+      if (index <= 0) return false
+
+      tx.update(this.isValidFlatValue, key, (prev) => {
+        prev.delete(index - 1, 1)
+        return prev
+      })
+      tx.setCaret({key, index: index - 1})
+
+      return true
     },
   })
   .extend(NoIndexTrait)
@@ -76,13 +104,13 @@ export const BooleanType = definePrimitiveNode(isBoolean)
   .finish('boolean')
 
 export const ParagraphType = defineWrappedNode('paragraph', TextType)
-  .extend({ HtmlTag: 'p' })
+  .extend({HtmlTag: 'p'})
   .finish('paragraph')
 
 export const ContentType = defineArrayNode(ParagraphType).finish('content')
 
 export const MultipleChoiceAnswerType = defineObjectNode(
-  { isCorrect: BooleanType, text: TextType },
+  {isCorrect: BooleanType, text: TextType},
   ['isCorrect', 'text'],
 )
   .extend({
@@ -103,7 +131,7 @@ export const MultipleChoiceAnswerType = defineObjectNode(
 export const MultipleChoiceAnswersType = defineArrayNode(
   MultipleChoiceAnswerType,
 )
-  .extend({ HtmlTag: 'ul' })
+  .extend({HtmlTag: 'ul'})
   .finish('multipleChoiceAnswers')
 
 export const MultipleChoiceExerciseType = defineObjectNode(

@@ -1,8 +1,8 @@
-import type { Command, CommandPayload } from '../commands'
-import type { Guard } from '../guards'
-import type { EditorStore } from '../store/store'
-import type { FlatValue, Key, NonRootKey, Transaction } from '../store/types'
-import type { Index, IndexPath } from './node-path'
+import type {Command, CommandPayload} from '../commands'
+import type {Guard} from '../guards'
+import type {EditorStore} from '../store/store'
+import type {FlatValue, Key, NonRootKey, Transaction} from '../store/types'
+import type {Index, IndexPath} from './node-path'
 
 export interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
@@ -16,19 +16,22 @@ export interface NodeType<J = unknown, F = FlatValue> {
   toJsonValue(store: EditorStore, key: Key): J
   getIndexWithin(store: EditorStore, key: Key, childKey: Key): Index
 
-  onCommand?: {
-    [C in Command]?: (
-      tx: Transaction,
-      // TODO: We should find a way that the type does not need to be passed here
-      //type: NodeType<J, F, I>,
-      store: EditorStore,
-      key: Key,
-      start: IndexPath,
-      end: IndexPath,
-      ...args: CommandPayload<C>
-    ) => boolean
-  }
+  [Command.InsertText]: OnCommand<Command.InsertText>
+  [Command.DeleteBackward]: OnCommand<Command.DeleteBackward>
+  [Command.DeleteForward]: OnCommand<Command.DeleteForward>
 }
+
+type OnCommand<C extends Command> = (
+  ctx: {
+    tx: Transaction
+    // TODO: We should find a way that the type does not need to be passed here
+    store: EditorStore
+    key: Key
+  },
+  start: IndexPath,
+  end: IndexPath,
+  ...args: CommandPayload<C>
+) => boolean
 
 export interface NonRootNodeType<J = unknown, F = FlatValue>
   extends NodeType<J, F> {

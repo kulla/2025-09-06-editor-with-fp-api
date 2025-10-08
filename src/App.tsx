@@ -49,9 +49,9 @@ export default function App() {
       } else if (event.key === 'Enter') {
         //manager.dispatchCommand(Command.InsertNewElement)
       } else if (event.key === 'Backspace') {
-        //manager.dispatchCommand(Command.DeleteBackward)
+        dispatchCommand(store, Command.DeleteBackward)
       } else if (event.key === 'Delete') {
-        //manager.dispatchCommand(Command.DeleteForward)
+        dispatchCommand(store, Command.DeleteForward)
       }
 
       if (

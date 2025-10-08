@@ -1,10 +1,12 @@
-import { takeWhile, zip } from 'es-toolkit'
-import { getNodeType } from './nodes/concrete-node-types'
-import { getPathToRoot, type IndexPath, type Path } from './nodes/node-path'
-import type { EditorStore } from './store/store'
+import {takeWhile, zip} from 'es-toolkit'
+import {getNodeType} from './nodes/concrete-node-types'
+import {getPathToRoot, type IndexPath, type Path} from './nodes/node-path'
+import type {EditorStore} from './store/store'
 
 export enum Command {
   InsertText = 'insertText',
+  DeleteBackward = 'deleteBackward',
+  DeleteForward = 'deleteForward',
 }
 
 interface CommandPayloads {
@@ -38,7 +40,7 @@ export function dispatchCommand<C extends Command>(
         }
       }*/
 
-    const { start, end } = cursor
+    const {start, end} = cursor
     const startPath = getPathToRoot(store, start)
     const endPath = getPathToRoot(store, end)
 
@@ -49,22 +51,21 @@ export function dispatchCommand<C extends Command>(
 
     const startIndex = startPath
       .slice(Math.max(commonPath.length - 1, 0))
-      .map(({ index }) => index)
+      .map(({index}) => index)
     const endIndex = endPath
       .slice(Math.max(commonPath.length - 1, 0))
-      .map(({ index }) => index)
+      .map(({index}) => index)
 
     let targetKey = commonPath.pop()?.key ?? startPath[0].key
 
     while (true) {
       const targetType = getNodeType(store, targetKey)
       // TODO: Remove type assertions when possible
-      const result = targetType.onCommand?.[command]?.(
-        tx,
-        store,
-        targetKey,
+      const result = targetType[command](
+        {tx, store, key: targetKey},
         startIndex as IndexPath,
         endIndex as IndexPath,
+        // @ts-expect-error
         ...payload,
       )
 
