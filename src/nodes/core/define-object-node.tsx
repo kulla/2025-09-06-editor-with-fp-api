@@ -17,7 +17,6 @@ export function defineObjectNode<C extends Record<string, NonRootNodeType>>(
 ) {
   return defineNonRootNode<
     { [K in keyof C]: JSONValue<C[K]> },
-    number,
     [keyof C & string, NonRootKey][]
   >()
     .extendType<{

@@ -4,7 +4,7 @@ import type { EditorStore } from '../../store/store'
 import type { FlatValue, Key, NonRootKey, Transaction } from '../../store/types'
 import type { Index, IndexPath } from './node-path'
 
-export interface NodeType<J = unknown, I = Index, F = FlatValue> {
+export interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
   JsonValueType?: J
 
@@ -15,7 +15,7 @@ export interface NodeType<J = unknown, I = Index, F = FlatValue> {
   getParentKey(store: EditorStore, key: Key): Key | null
   render(store: EditorStore, key: Key): React.ReactNode
   toJsonValue(store: EditorStore, key: Key): J
-  getIndexWithin(store: EditorStore, key: Key, childKey: NonRootKey): I
+  getIndexWithin(store: EditorStore, key: Key, childKey: NonRootKey): Index
 
   onCommand?: {
     [C in Command]?: (
@@ -24,15 +24,15 @@ export interface NodeType<J = unknown, I = Index, F = FlatValue> {
       //type: NodeType<J, F, I>,
       store: EditorStore,
       key: Key,
-      start: IndexPath<I>,
-      end: IndexPath<I>,
+      start: IndexPath,
+      end: IndexPath,
       ...args: C extends Command ? CommandPayload<C> : []
     ) => boolean
   }
 }
 
-export interface NonRootNodeType<J = unknown, I = Index, F = FlatValue>
-  extends NodeType<J, I, F> {
+export interface NonRootNodeType<J = unknown, F = FlatValue>
+  extends NodeType<J, F> {
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 

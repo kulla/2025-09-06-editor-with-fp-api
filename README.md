@@ -5,6 +5,10 @@
 1. Clone the repository
 2. Install the dependencies via `bun install`
 
+## Known limitations
+
+* Index in onCommand functions cannot be narrowed down since it is used as an argument and thus the generic becomes contravariant.
+
 ## Get started
 
 Start the dev server:

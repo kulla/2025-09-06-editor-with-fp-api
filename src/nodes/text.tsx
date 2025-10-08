@@ -1,8 +1,8 @@
 import * as Y from 'yjs'
 import { defineNonRootNode } from './core/define-non-root-node'
-import { NoIndex, NoIndexTrait } from './core/node-path'
+import { NoIndexTrait } from './core/node-path'
 
-export const TextNode = defineNonRootNode<string, NoIndex, Y.Text>()
+export const TextNode = defineNonRootNode<string, Y.Text>()
   .extend({
     isValidFlatValue: (value) => value instanceof Y.Text,
 

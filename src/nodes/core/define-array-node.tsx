@@ -3,8 +3,8 @@ import { isNonRootKey, type NonRootKey } from '../../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import type { NonRootNodeType } from './types'
 
-export function defineArrayNode<CJ, CI>(childType: NonRootNodeType<CJ, CI>) {
-  return defineNonRootNode<CJ[], number, NonRootKey[]>()
+export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
+  return defineNonRootNode<CJ[], NonRootKey[]>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isArrayOf(isNonRootKey),

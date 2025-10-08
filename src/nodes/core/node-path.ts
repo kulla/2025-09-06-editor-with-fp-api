@@ -1,11 +1,8 @@
-export type NoIndex = typeof NoIndex
-export const NoIndex = Symbol('no-index')
-
-export type Index = string | number | NoIndex
-export type IndexPath<I> = [I, ...Index[]] | []
+export type Index = string | number | never
+export type IndexPath = [Index, ...Index[]] | []
 
 export const NoIndexTrait = {
-  getIndexWithin(): NoIndex {
-    return NoIndex
+  getIndexWithin(): never {
+    return undefined as never
   },
 }

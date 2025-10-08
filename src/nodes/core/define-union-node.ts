@@ -1,7 +1,7 @@
 import { invariant } from 'es-toolkit'
 import { isNonRootKey, type NonRootKey } from '../../store/types'
 import { defineNonRootNode } from './define-non-root-node'
-import { type NoIndex, NoIndexTrait } from './node-path'
+import { NoIndexTrait } from './node-path'
 import type { JSONValue, NonRootNodeType } from './types'
 
 export function defineUnionNode<
@@ -15,7 +15,7 @@ export function defineUnionNode<
     return childType
   }
 
-  return defineNonRootNode<JSONValue<C[number]>, NoIndex, NonRootKey>()
+  return defineNonRootNode<JSONValue<C[number]>, NonRootKey>()
     .extend({
       isValidFlatValue: isNonRootKey,
 
