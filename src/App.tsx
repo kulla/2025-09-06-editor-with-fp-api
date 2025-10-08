@@ -107,7 +107,6 @@ export default function App() {
         }}
         getCurrentValue={{
           html: () => {
-            // Render with RenderServer
             if (!store.has(rootKey)) return ''
 
             const reactNode = RootType.render(store, rootKey, onKeyDown)
