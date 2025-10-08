@@ -1,16 +1,13 @@
-import {
-  type FlatValue,
-  isNonRootKey,
-  type NonRootKey,
-} from '../../store/types'
+import { isNonRootKey, type NonRootKey } from '../../store/types'
 import { defineNonRootNode } from './define-non-root-node'
+import { type NoIndex, NoIndexTrait } from './node-path'
 import type { NonRootNodeType } from './types'
 
-export function defineWrappedNode<T extends string, CJ>(
+export function defineWrappedNode<T extends string, CJ, CI>(
   typeName: T,
-  childType: NonRootNodeType<CJ, FlatValue>,
+  childType: NonRootNodeType<CJ, CI>,
 ) {
-  return defineNonRootNode<{ type: T; value: CJ }, NonRootKey>()
+  return defineNonRootNode<{ type: T; value: CJ }, NoIndex, NonRootKey>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isNonRootKey,
@@ -41,4 +38,5 @@ export function defineWrappedNode<T extends string, CJ>(
         )
       },
     })
+    .extend(NoIndexTrait)
 }

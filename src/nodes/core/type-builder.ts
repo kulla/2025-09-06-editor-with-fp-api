@@ -1,3 +1,4 @@
+import { merge } from 'es-toolkit'
 import type { O } from 'ts-toolbelt'
 
 export class TypeBuilder<T extends object, I extends object> {
@@ -5,7 +6,7 @@ export class TypeBuilder<T extends object, I extends object> {
 
   extend<I2 extends Abstract<T>>(ext: I2 | ((Base: I) => I2)) {
     const extension = typeof ext === 'function' ? ext(this.impl) : ext
-    const newImpl = { ...this.impl, ...extension } as O.Merge<I, I2>
+    const newImpl = merge(this.impl, extension) as O.Merge<I, I2>
 
     return new TypeBuilder<T, O.Merge<I, I2>>(newImpl)
   }

@@ -17,6 +17,7 @@ export function defineObjectNode<C extends Record<string, NonRootNodeType>>(
 ) {
   return defineNonRootNode<
     { [K in keyof C]: JSONValue<C[K]> },
+    number,
     [keyof C & string, NonRootKey][]
   >()
     .extendType<{
@@ -80,6 +81,18 @@ export function defineObjectNode<C extends Record<string, NonRootNodeType>>(
             {children}
           </HtmlTag>
         )
+      },
+
+      getIndexWithin(store, key, childKey) {
+        const entries = this.getFlatValue(store, key)
+        const index = entries.findIndex(([, k]) => k === childKey)
+
+        invariant(
+          index !== -1,
+          `Child key ${childKey} not found in object ${key}`,
+        )
+
+        return index
       },
     })
 }

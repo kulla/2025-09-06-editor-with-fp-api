@@ -1,14 +1,10 @@
 import { isArrayOf } from '../../guards'
-import {
-  type FlatValue,
-  isNonRootKey,
-  type NonRootKey,
-} from '../../store/types'
+import { isNonRootKey, type NonRootKey } from '../../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import type { NonRootNodeType } from './types'
 
-export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
-  return defineNonRootNode<CJ[], NonRootKey[]>()
+export function defineArrayNode<CJ, CI>(childType: NonRootNodeType<CJ, CI>) {
+  return defineNonRootNode<CJ[], number, NonRootKey[]>()
     .extendType<{ HtmlTag: React.ElementType }>()
     .extend({
       isValidFlatValue: isArrayOf(isNonRootKey),
@@ -41,6 +37,11 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ, FlatValue>) {
             {children}
           </HtmlTag>
         )
+      },
+
+      getIndexWithin(store, key, childKey) {
+        const childKeys = this.getFlatValue(store, key)
+        return childKeys.indexOf(childKey)
       },
     })
 }

@@ -5,10 +5,11 @@ import {
   type Transaction,
 } from '../../store/types'
 import { defineNode } from './define-node'
+import { type NoIndex, NoIndexTrait } from './node-path'
 import type { NonRootNodeType } from './types'
 
 export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
-  return defineNode<CJ, NonRootKey>()
+  return defineNode<CJ, NoIndex, NonRootKey>()
     .extendType<{
       attachRoot(tx: Transaction, rootKey: RootKey, json: CJ): void
     }>()
@@ -40,4 +41,5 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
         )
       },
     })
+    .extend(NoIndexTrait)
 }

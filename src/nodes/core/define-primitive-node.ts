@@ -2,9 +2,10 @@ import type { Guard } from '../../guards'
 import type { Key, Transaction } from '../../store/types'
 import type { PrimitiveValue } from '../../utils/types'
 import { defineNonRootNode } from './define-non-root-node'
+import { type NoIndex, NoIndexTrait } from './node-path'
 
 export function definePrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
-  return defineNonRootNode<V, V>()
+  return defineNonRootNode<V, NoIndex, V>()
     .extendType<{ updateValue(tx: Transaction, key: Key, newValue: V): void }>()
     .extend({
       isValidFlatValue: guard,
@@ -21,4 +22,5 @@ export function definePrimitiveNode<V extends PrimitiveValue>(guard: Guard<V>) {
         return tx.insert(this.typeName, parentKey, () => json)
       },
     })
+    .extend(NoIndexTrait)
 }

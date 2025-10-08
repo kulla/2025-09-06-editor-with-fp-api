@@ -1,6 +1,7 @@
 import { invariant } from 'es-toolkit'
 import { isNonRootKey, type NonRootKey } from '../../store/types'
 import { defineNonRootNode } from './define-non-root-node'
+import { type NoIndex, NoIndexTrait } from './node-path'
 import type { JSONValue, NonRootNodeType } from './types'
 
 export function defineUnionNode<
@@ -14,29 +15,31 @@ export function defineUnionNode<
     return childType
   }
 
-  return defineNonRootNode<JSONValue<C[number]>, NonRootKey>().extend({
-    isValidFlatValue: isNonRootKey,
+  return defineNonRootNode<JSONValue<C[number]>, NoIndex, NonRootKey>()
+    .extend({
+      isValidFlatValue: isNonRootKey,
 
-    toJsonValue(store, key) {
-      const childKey = this.getFlatValue(store, key)
-      const childType = getChildType(store.getTypeName(childKey))
+      toJsonValue(store, key) {
+        const childKey = this.getFlatValue(store, key)
+        const childType = getChildType(store.getTypeName(childKey))
 
-      return childType.toJsonValue(store, childKey) as JSONValue<C[number]>
-    },
+        return childType.toJsonValue(store, childKey) as JSONValue<C[number]>
+      },
 
-    store(tx, json, parentKey) {
-      const childType = getChildType(getTypeName(json))
+      store(tx, json, parentKey) {
+        const childType = getChildType(getTypeName(json))
 
-      return tx.insert(this.typeName, parentKey, (key) =>
-        childType.store(tx, json, key),
-      )
-    },
+        return tx.insert(this.typeName, parentKey, (key) =>
+          childType.store(tx, json, key),
+        )
+      },
 
-    render(store, key) {
-      const childKey = this.getFlatValue(store, key)
-      const childType = getChildType(store.getTypeName(childKey))
+      render(store, key) {
+        const childKey = this.getFlatValue(store, key)
+        const childType = getChildType(store.getTypeName(childKey))
 
-      return childType.render(store, childKey)
-    },
-  })
+        return childType.render(store, childKey)
+      },
+    })
+    .extend(NoIndexTrait)
 }
