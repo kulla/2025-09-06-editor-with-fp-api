@@ -1,4 +1,4 @@
-import { isBoolean } from 'es-toolkit'
+import { invariant, isBoolean } from 'es-toolkit'
 import * as Y from 'yjs'
 import { defineArrayNode } from './core/define-array-node'
 import { defineLiteralNode } from './core/define-literal-nodes'
@@ -9,6 +9,7 @@ import { defineRootNode } from './core/define-root-node'
 import { defineUnionNode } from './core/define-union-node'
 import { defineWrappedNode } from './core/define-wrapped-node'
 import { NoIndexTrait } from './core/node-path'
+import { NodeType } from './core/types'
 
 export const TextNode = defineNonRootNode<string, Y.Text>()
   .extend({
@@ -132,3 +133,28 @@ export const DocumentItemNode = defineUnionNode(
 export const DocumentNode = defineArrayNode(DocumentItemNode).finish('document')
 
 export const RootNode = defineRootNode(DocumentNode).finish('root')
+
+const allNodes = [
+  TextNode,
+  BooleanNode,
+  ParagraphNode,
+  ContentNode,
+  MultipleChoiceAnswerNode,
+  MultipleChoiceAnswersNode,
+  MultipleChoiceExerciseNode,
+  DocumentItemNode,
+  DocumentNode,
+  RootNode,
+] as const
+
+const nodeTypeMap: Record<string, NodeType | undefined> = Object.fromEntries(
+  allNodes.map((n) => [n.typeName, n]),
+)
+
+export function getNodeByTypeName(typeName: string): NodeType {
+  const node = nodeTypeMap[typeName]
+
+  invariant(node, `Unknown node type: ${typeName}`)
+
+  return node
+}
