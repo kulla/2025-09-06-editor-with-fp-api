@@ -7,12 +7,12 @@ import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
-import { RootNode } from './nodes/concrete-node-types'
+import { RootType } from './nodes/concrete-node-types'
 import type { JSONValue } from './nodes/core/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
 
-const initialValue: JSONValue<typeof RootNode> = [
+const initialValue: JSONValue<typeof RootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
     type: 'paragraph',
@@ -36,7 +36,7 @@ export default function App() {
   useEffect(() => {
     if (store.has(rootKey)) return
 
-    store.update((tx) => RootNode.attachRoot(tx, rootKey, initialValue))
+    store.update((tx) => RootType.attachRoot(tx, rootKey, initialValue))
   }, [store])
 
   const updateCursorFromSelection = useCallback(() => {
@@ -70,7 +70,7 @@ export default function App() {
     <main className="p-10">
       <h1>Editor</h1>
       {store.has(rootKey) ? (
-        RootNode.render(store, rootKey)
+        RootType.render(store, rootKey)
       ) : (
         <p>Loading editor...</p>
       )}
@@ -86,7 +86,7 @@ export default function App() {
             // Render with RenderServer
             if (!store.has(rootKey)) return ''
 
-            const reactNode = RootNode.render(store, rootKey)
+            const reactNode = RootType.render(store, rootKey)
 
             return beautifyHtml(renderToStaticMarkup(reactNode), {
               indent_size: 2,
@@ -96,7 +96,7 @@ export default function App() {
           json: () => {
             if (!store.has(rootKey)) return ''
 
-            const jsonValue = RootNode.toJsonValue(store, rootKey)
+            const jsonValue = RootType.toJsonValue(store, rootKey)
             return JSON.stringify(jsonValue, null, 2)
           },
           entries: () => {

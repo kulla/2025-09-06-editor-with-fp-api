@@ -11,7 +11,7 @@ import { defineWrappedNode } from './core/define-wrapped-node'
 import { NoIndexTrait } from './core/node-path'
 import { NodeType } from './core/types'
 
-export const TextNode = defineNonRootNode<string, Y.Text>()
+export const TextType = defineNonRootNode<string, Y.Text>()
   .extend({
     isValidFlatValue: (value) => value instanceof Y.Text,
 
@@ -34,7 +34,7 @@ export const TextNode = defineNonRootNode<string, Y.Text>()
   .extend(NoIndexTrait)
   .finish('text')
 
-export const BooleanNode = definePrimitiveNode(isBoolean)
+export const BooleanType = definePrimitiveNode(isBoolean)
   .extend({
     render(store, key) {
       const currentValue = this.getFlatValue(store, key)
@@ -57,14 +57,14 @@ export const BooleanNode = definePrimitiveNode(isBoolean)
   })
   .finish('boolean')
 
-export const ParagraphNode = defineWrappedNode('paragraph', TextNode)
+export const ParagraphType = defineWrappedNode('paragraph', TextType)
   .extend({ HtmlTag: 'p' })
   .finish('paragraph')
 
-export const ContentNode = defineArrayNode(ParagraphNode).finish('content')
+export const ContentType = defineArrayNode(ParagraphType).finish('content')
 
-export const MultipleChoiceAnswerNode = defineObjectNode(
-  { isCorrect: BooleanNode, text: TextNode },
+export const MultipleChoiceAnswerType = defineObjectNode(
+  { isCorrect: BooleanType, text: TextType },
   ['isCorrect', 'text'],
 )
   .extend({
@@ -74,27 +74,27 @@ export const MultipleChoiceAnswerNode = defineObjectNode(
 
       return (
         <li key={key} id={key} data-key={key} className={this.typeName}>
-          {BooleanNode.render(store, isCorrectKey)}
-          {TextNode.render(store, textKey)}
+          {BooleanType.render(store, isCorrectKey)}
+          {TextType.render(store, textKey)}
         </li>
       )
     },
   })
   .finish('multipleChoiceAnswer')
 
-export const MultipleChoiceAnswersNode = defineArrayNode(
-  MultipleChoiceAnswerNode,
+export const MultipleChoiceAnswersType = defineArrayNode(
+  MultipleChoiceAnswerType,
 )
   .extend({ HtmlTag: 'ul' })
   .finish('multipleChoiceAnswers')
 
-export const MultipleChoiceExerciseNode = defineObjectNode(
+export const MultipleChoiceExerciseType = defineObjectNode(
   {
     type: defineLiteralNode('multipleChoiceExercise').finish(
       'literal:multipleChoiceExercise',
     ),
-    exercise: ContentNode,
-    answers: MultipleChoiceAnswersNode,
+    exercise: ContentType,
+    answers: MultipleChoiceAnswersType,
   },
   ['exercise', 'answers'],
 )
@@ -114,10 +114,10 @@ export const MultipleChoiceExerciseNode = defineObjectNode(
             <legend className="mt-2">
               <strong>Multiple Choice Exercise</strong>
             </legend>
-            {ContentNode.render(store, exerciseKey)}
+            {ContentType.render(store, exerciseKey)}
           </div>
           <div className="answers">
-            {MultipleChoiceAnswersNode.render(store, answersKey)}
+            {MultipleChoiceAnswersType.render(store, answersKey)}
           </div>
         </fieldset>
       )
@@ -125,26 +125,26 @@ export const MultipleChoiceExerciseNode = defineObjectNode(
   })
   .finish('multipleChoiceExercise')
 
-export const DocumentItemNode = defineUnionNode(
-  [ParagraphNode, MultipleChoiceExerciseNode],
+export const DocumentItemType = defineUnionNode(
+  [ParagraphType, MultipleChoiceExerciseType],
   (json) => json.type,
 ).finish('documentItem')
 
-export const DocumentNode = defineArrayNode(DocumentItemNode).finish('document')
+export const DocumentType = defineArrayNode(DocumentItemType).finish('document')
 
-export const RootNode = defineRootNode(DocumentNode).finish('root')
+export const RootType = defineRootNode(DocumentType).finish('root')
 
 const allNodes = [
-  TextNode,
-  BooleanNode,
-  ParagraphNode,
-  ContentNode,
-  MultipleChoiceAnswerNode,
-  MultipleChoiceAnswersNode,
-  MultipleChoiceExerciseNode,
-  DocumentItemNode,
-  DocumentNode,
-  RootNode,
+  TextType,
+  BooleanType,
+  ParagraphType,
+  ContentType,
+  MultipleChoiceAnswerType,
+  MultipleChoiceAnswersType,
+  MultipleChoiceExerciseType,
+  DocumentItemType,
+  DocumentType,
+  RootType,
 ] as const
 
 const nodeTypeMap: Record<string, NodeType | undefined> = Object.fromEntries(
