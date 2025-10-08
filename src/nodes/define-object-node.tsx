@@ -5,9 +5,9 @@ import {
   isKeyOf,
   isString,
   isTupleOf,
-} from '../../guards'
-import type { EditorStore } from '../../store/store'
-import { isNonRootKey, type Key, type NonRootKey } from '../../store/types'
+} from '../guards'
+import type { EditorStore } from '../store/store'
+import { isNonRootKey, type Key, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import type { JSONValue, NonRootNodeType } from './types'
 

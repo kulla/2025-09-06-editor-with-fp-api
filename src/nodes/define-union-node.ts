@@ -1,5 +1,5 @@
 import { invariant } from 'es-toolkit'
-import { isNonRootKey, type NonRootKey } from '../../store/types'
+import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import { NoIndexTrait } from './node-path'
 import type { JSONValue, NonRootNodeType } from './types'

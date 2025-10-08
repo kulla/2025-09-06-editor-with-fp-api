@@ -1,4 +1,4 @@
-import type { Key } from '../../store/types'
+import type { Key } from '../store/types'
 
 export type Path = PathFrame[]
 type PathFrame = { key: Key; index?: Index }

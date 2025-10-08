@@ -1,4 +1,4 @@
-import { isNonRootKey, type NonRootKey } from '../../store/types'
+import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import { NoIndexTrait } from './node-path'
 import type { NonRootNodeType } from './types'

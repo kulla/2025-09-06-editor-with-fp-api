@@ -3,7 +3,7 @@ import {
   type NonRootKey,
   type RootKey,
   type Transaction,
-} from '../../store/types'
+} from '../store/types'
 import { defineNode } from './define-node'
 import { NoIndexTrait } from './node-path'
 import type { NonRootNodeType } from './types'

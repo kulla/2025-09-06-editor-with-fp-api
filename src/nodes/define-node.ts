@@ -1,4 +1,4 @@
-import type { FlatValue } from '../../store/types'
+import type { FlatValue } from '../store/types'
 import { TypeBuilder } from './type-builder'
 import type { NodeType } from './types'
 

@@ -1,4 +1,4 @@
-import type { PrimitiveValue } from '../../utils/types'
+import type { PrimitiveValue } from '../utils/types'
 import { definePrimitiveNode } from './define-primitive-node'
 
 export function defineLiteralNode<T extends PrimitiveValue>(value: T) {

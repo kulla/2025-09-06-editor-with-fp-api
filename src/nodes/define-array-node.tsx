@@ -1,5 +1,5 @@
-import { isArrayOf } from '../../guards'
-import { isNonRootKey, type NonRootKey } from '../../store/types'
+import { isArrayOf } from '../guards'
+import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
 import type { NonRootNodeType } from './types'
 

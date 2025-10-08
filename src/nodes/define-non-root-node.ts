@@ -1,5 +1,5 @@
 import { invariant } from 'es-toolkit'
-import type { FlatValue } from '../../store/types'
+import type { FlatValue } from '../store/types'
 import { defineNode } from './define-node'
 import type { NonRootNodeType } from './types'
 

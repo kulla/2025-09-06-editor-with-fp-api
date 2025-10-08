@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
 import { RootType } from './nodes/concrete-node-types'
-import type { JSONValue } from './nodes/core/types'
+import type { JSONValue } from './nodes/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
 

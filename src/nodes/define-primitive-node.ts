@@ -1,6 +1,6 @@
-import type { Guard } from '../../guards'
-import type { Key, Transaction } from '../../store/types'
-import type { PrimitiveValue } from '../../utils/types'
+import type { Guard } from '../guards'
+import type { Key, Transaction } from '../store/types'
+import type { PrimitiveValue } from '../utils/types'
 import { defineNonRootNode } from './define-non-root-node'
 import { NoIndexTrait } from './node-path'
 
