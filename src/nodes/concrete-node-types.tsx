@@ -134,7 +134,7 @@ export const DocumentType = defineArrayNode(DocumentItemType).finish('document')
 
 export const RootType = defineRootNode(DocumentType).finish('root')
 
-const allNodes = [
+const allNodeTypes = [
   TextType,
   BooleanType,
   ParagraphType,
@@ -148,10 +148,10 @@ const allNodes = [
 ] as const
 
 const nodeTypeMap: Record<string, NodeType | undefined> = Object.fromEntries(
-  allNodes.map((n) => [n.typeName, n]),
+  allNodeTypes.map((n) => [n.typeName, n]),
 )
 
-export function getNodeByTypeName(typeName: string): NodeType {
+export function getNodeType(typeName: string): NodeType {
   const node = nodeTypeMap[typeName]
 
   invariant(node, `Unknown node type: ${typeName}`)
