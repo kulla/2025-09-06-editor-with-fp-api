@@ -1,9 +1,65 @@
-import { BooleanNode } from './boolean'
-import { ContentNode } from './content'
+import { isBoolean } from 'es-toolkit'
+import * as Y from 'yjs'
 import { defineArrayNode } from './core/define-array-node'
 import { defineLiteralNode } from './core/define-literal-nodes'
+import { defineNonRootNode } from './core/define-non-root-node'
 import { defineObjectNode } from './core/define-object-node'
-import { TextNode } from './text'
+import { definePrimitiveNode } from './core/define-primitive-node'
+import { defineUnionNode } from './core/define-union-node'
+import { defineWrappedNode } from './core/define-wrapped-node'
+import { NoIndexTrait } from './core/node-path'
+
+export const TextNode = defineNonRootNode<string, Y.Text>()
+  .extend({
+    isValidFlatValue: (value) => value instanceof Y.Text,
+
+    toJsonValue(store, key) {
+      return this.getFlatValue(store, key).toString()
+    },
+
+    store(tx, json, parentKey) {
+      return tx.insert(this.typeName, parentKey, () => new Y.Text(json))
+    },
+
+    render(store, key) {
+      return (
+        <span key={key} id={key} data-key={key} data-type="text">
+          {this.toJsonValue(store, key)}
+        </span>
+      )
+    },
+  })
+  .extend(NoIndexTrait)
+  .finish('text')
+
+export const BooleanNode = definePrimitiveNode(isBoolean)
+  .extend({
+    render(store, key) {
+      const currentValue = this.getFlatValue(store, key)
+
+      return (
+        <input
+          key={key}
+          id={key}
+          data-key={key}
+          type="checkbox"
+          checked={currentValue}
+          onChange={(e) => {
+            store.update((tx) => {
+              this.updateValue(tx, key, e.target.checked)
+            })
+          }}
+        />
+      )
+    },
+  })
+  .finish('boolean')
+
+export const ParagraphNode = defineWrappedNode('paragraph', TextNode)
+  .extend({ HtmlTag: 'p' })
+  .finish('paragraph')
+
+export const ContentNode = defineArrayNode(ParagraphNode).finish('content')
 
 export const MultipleChoiceAnswerNode = defineObjectNode(
   { isCorrect: BooleanNode, text: TextNode },
@@ -66,3 +122,10 @@ export const MultipleChoiceExerciseNode = defineObjectNode(
     },
   })
   .finish('multipleChoiceExercise')
+
+export const DocumentItemType = defineUnionNode(
+  [ParagraphNode, MultipleChoiceExerciseNode],
+  (json) => json.type,
+).finish('documentItem')
+
+export const DocumentType = defineArrayNode(DocumentItemType).finish('document')
