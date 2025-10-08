@@ -17,7 +17,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
       render(
         store: EditorStore,
         key: Key,
-        handleBeforeInput: React.EventHandler<React.InputEvent>,
+        keyDown: React.KeyboardEventHandler,
       ): React.ReactNode
     }>()
     .extend({
@@ -32,7 +32,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
         tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
       },
 
-      render(store, key, beforeInputHandler) {
+      render(store, key, onKeyDown) {
         const childKey = this.getFlatValue(store, key)
         return (
           <article
@@ -42,7 +42,8 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
-            onBeforeInput={beforeInputHandler}
+            // @ts-ignore-error React types are wrong
+            onKeyDown={onKeyDown}
           >
             {childType.render(store, childKey)}
           </article>

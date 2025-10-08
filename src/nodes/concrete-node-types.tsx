@@ -32,6 +32,22 @@ export const TextType = defineNonRootNode<string, Y.Text>()
         </span>
       )
     },
+
+    onCommand: {
+      insertText(tx, _store, key, [index], [endIndex], text) {
+        if (typeof index !== 'number' || typeof endIndex !== 'number')
+          return false
+        if (index == null || index !== endIndex) return false
+
+        tx.update(TextType.isValidFlatValue, key, (prev) => {
+          prev.insert(index, text)
+          return prev
+        })
+        tx.setCaret({ key, index: index + text.length })
+
+        return true
+      },
+    },
   })
   .extend(NoIndexTrait)
   .finish('text')

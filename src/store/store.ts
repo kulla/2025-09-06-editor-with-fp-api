@@ -102,7 +102,10 @@ export class EditorStore {
         const newValue =
           typeof updateFn === 'function' ? updateFn(currentValue) : updateFn
 
-        this.values.set(key, newValue)
+        if (newValue !== currentValue) {
+          console.log(`Updating key ${key}:`)
+          this.values.set(key, newValue)
+        }
       },
       attachRoot: (rootKey, value) => {
         invariant(

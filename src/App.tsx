@@ -11,6 +11,7 @@ import { RootType } from './nodes/concrete-node-types'
 import type { JSONValue } from './nodes/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
+import { Command, dispatchCommand } from './commands'
 
 const initialValue: JSONValue<typeof RootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
@@ -41,10 +42,25 @@ export default function App() {
     }
   }, [store])
 
-  const handleBeforeInput = useCallback(
-    (event: React.InputEvent) => {
-      event.preventDefault()
-      console.log('Before input:', event.nativeEvent.data)
+  const onKeyDown: React.KeyboardEventHandler = useCallback(
+    (event) => {
+      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+        dispatchCommand(store, Command.InsertText, event.key)
+      } else if (event.key === 'Enter') {
+        //manager.dispatchCommand(Command.InsertNewElement)
+      } else if (event.key === 'Backspace') {
+        //manager.dispatchCommand(Command.DeleteBackward)
+      } else if (event.key === 'Delete') {
+        //manager.dispatchCommand(Command.DeleteForward)
+      }
+
+      if (
+        (event.ctrlKey && ['c', 'v', 'x'].includes(event.key.toLowerCase())) ||
+        ['Enter', 'Tab', 'Delete', 'Backspace'].includes(event.key) ||
+        (event.key.length === 1 && !event.ctrlKey && !event.metaKey)
+      ) {
+        event.preventDefault()
+      }
     },
     [store],
   )
@@ -78,7 +94,7 @@ export default function App() {
     <main className="p-10">
       <h1>Editor</h1>
       {store.has(rootKey) ? (
-        RootType.render(store, rootKey, handleBeforeInput)
+        RootType.render(store, rootKey, onKeyDown)
       ) : (
         <p>Loading editor...</p>
       )}
@@ -94,7 +110,7 @@ export default function App() {
             // Render with RenderServer
             if (!store.has(rootKey)) return ''
 
-            const reactNode = RootType.render(store, rootKey, handleBeforeInput)
+            const reactNode = RootType.render(store, rootKey, onKeyDown)
 
             return beautifyHtml(renderToStaticMarkup(reactNode), {
               indent_size: 2,
