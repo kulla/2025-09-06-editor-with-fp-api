@@ -13,7 +13,6 @@ export interface NodeType<J = unknown, F = FlatValue> {
   isValidFlatValue: Guard<F>
   getFlatValue(store: EditorStore, key: Key): F
   getParentKey(store: EditorStore, key: Key): Key | null
-  render(store: EditorStore, key: Key): React.ReactNode
   toJsonValue(store: EditorStore, key: Key): J
   getIndexWithin(store: EditorStore, key: Key, childKey: Key): Index
 
@@ -33,6 +32,7 @@ export interface NodeType<J = unknown, F = FlatValue> {
 
 export interface NonRootNodeType<J = unknown, F = FlatValue>
   extends NodeType<J, F> {
+  render(store: EditorStore, key: Key): React.ReactNode
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 

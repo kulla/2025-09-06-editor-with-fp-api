@@ -1,5 +1,7 @@
+import type { EditorStore } from '../store/store'
 import {
   isNonRootKey,
+  type Key,
   type NonRootKey,
   type RootKey,
   type Transaction,
@@ -12,6 +14,11 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
   return defineNode<CJ, NonRootKey>()
     .extendType<{
       attachRoot(tx: Transaction, rootKey: RootKey, json: CJ): void
+      render(
+        store: EditorStore,
+        key: Key,
+        handleBeforeInput: React.EventHandler<React.InputEvent>,
+      ): React.ReactNode
     }>()
     .extend({
       isValidFlatValue: isNonRootKey,
@@ -25,7 +32,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
         tx.attachRoot(rootKey, childType.store(tx, json, rootKey))
       },
 
-      render(store, key) {
+      render(store, key, beforeInputHandler) {
         const childKey = this.getFlatValue(store, key)
         return (
           <article
@@ -35,6 +42,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
+            onBeforeInput={beforeInputHandler}
           >
             {childType.render(store, childKey)}
           </article>

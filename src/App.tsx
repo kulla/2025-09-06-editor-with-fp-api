@@ -41,6 +41,14 @@ export default function App() {
     }
   }, [store])
 
+  const handleBeforeInput = useCallback(
+    (event: React.InputEvent) => {
+      event.preventDefault()
+      console.log('Before input:', event.nativeEvent.data)
+    },
+    [store],
+  )
+
   useEffect(() => {
     document.addEventListener('selectionchange', updateCursorFromSelection)
 
@@ -70,7 +78,7 @@ export default function App() {
     <main className="p-10">
       <h1>Editor</h1>
       {store.has(rootKey) ? (
-        RootType.render(store, rootKey)
+        RootType.render(store, rootKey, handleBeforeInput)
       ) : (
         <p>Loading editor...</p>
       )}
@@ -86,7 +94,7 @@ export default function App() {
             // Render with RenderServer
             if (!store.has(rootKey)) return ''
 
-            const reactNode = RootType.render(store, rootKey)
+            const reactNode = RootType.render(store, rootKey, handleBeforeInput)
 
             return beautifyHtml(renderToStaticMarkup(reactNode), {
               indent_size: 2,
