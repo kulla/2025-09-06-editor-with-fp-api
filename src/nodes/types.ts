@@ -1,8 +1,8 @@
-import type {Command, CommandPayload} from '../commands'
-import type {Guard} from '../guards'
-import type {EditorStore} from '../store/store'
-import type {FlatValue, Key, NonRootKey, Transaction} from '../store/types'
-import type {Index, IndexPath} from './node-path'
+import type { Command, CommandPayload } from '../commands'
+import type { Guard } from '../guards'
+import type { EditorStore } from '../store/store'
+import type { FlatValue, Key, NonRootKey, Transaction } from '../store/types'
+import type { Index, IndexPath } from './node-path'
 
 export interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
@@ -19,6 +19,7 @@ export interface NodeType<J = unknown, F = FlatValue> {
   [Command.InsertText]: OnCommand<Command.InsertText>
   [Command.DeleteBackward]: OnCommand<Command.DeleteBackward>
   [Command.DeleteForward]: OnCommand<Command.DeleteForward>
+  [Command.DeleteRange]: OnCommand<Command.DeleteRange>
 }
 
 type OnCommand<C extends Command> = (

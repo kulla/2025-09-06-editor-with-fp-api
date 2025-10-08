@@ -1,6 +1,6 @@
-import type {FlatValue} from '../store/types'
-import {TypeBuilder} from './type-builder'
-import type {NodeType} from './types'
+import type { FlatValue } from '../store/types'
+import { TypeBuilder } from './type-builder'
+import type { NodeType } from './types'
 
 export function defineNode<J, F extends FlatValue>() {
   return TypeBuilder.begin<NodeType<J, F>>().extend({
@@ -15,5 +15,6 @@ export function defineNode<J, F extends FlatValue>() {
     insertText: () => false,
     deleteBackward: () => false,
     deleteForward: () => false,
+    deleteRange: () => false,
   })
 }

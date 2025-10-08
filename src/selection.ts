@@ -42,6 +42,11 @@ export function getPoint(
   return type === 'text' && offset != null ? { key, index: offset } : { key }
 }
 
+export function isCollapsed(cursor: Cursor): boolean {
+  const { start, end } = cursor
+  return start.key === end.key && start.index === end.index
+}
+
 export function setSelection(cursor: Cursor | null) {
   if (cursor == null) {
     window.getSelection()?.removeAllRanges()

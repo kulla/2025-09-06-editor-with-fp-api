@@ -1,12 +1,14 @@
 import {takeWhile, zip} from 'es-toolkit'
 import {getNodeType} from './nodes/concrete-node-types'
 import {getPathToRoot, type IndexPath, type Path} from './nodes/node-path'
+import {isCollapsed} from './selection'
 import type {EditorStore} from './store/store'
 
 export enum Command {
   InsertText = 'insertText',
   DeleteBackward = 'deleteBackward',
   DeleteForward = 'deleteForward',
+  DeleteRange = 'deleteRange',
 }
 
 interface CommandPayloads {
@@ -27,18 +29,19 @@ export function dispatchCommand<C extends Command>(
 
     if (cursor == null) return true
 
-    /*if (command !== Command.DeleteRange && !isCollapsed(tx.cursor)) {
-        const result = this.dispatchCommand(Command.DeleteRange)
+    if (command !== Command.DeleteRange && !isCollapsed(cursor)) {
+      const result = dispatchCommand(store, Command.DeleteRange)
 
-        if (!result) return false
-        if (
-          command === Command.DeleteBackward ||
-          command === Command.DeleteForward
-        ) {
-          // If we delete a range, we don't need to handle backward or forward deletion
-          return true
-        }
-      }*/
+      if (!result) return false
+
+      if (
+        command === Command.DeleteBackward ||
+        command === Command.DeleteForward
+      ) {
+        // If we delete a range, we don't need to handle backward or forward deletion
+        return true
+      }
+    }
 
     const {start, end} = cursor
     const startPath = getPathToRoot(store, start)

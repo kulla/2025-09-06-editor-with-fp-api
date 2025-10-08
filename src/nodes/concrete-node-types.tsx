@@ -63,6 +63,24 @@ export const TextType = defineNonRootNode<string, Y.Text>()
       return true
     },
 
+    deleteRange({store, tx, key}, [startIndex], [endIndex]) {
+      if (typeof startIndex !== 'number') return false
+      if (typeof endIndex !== 'number') return false
+
+      const start = startIndex ?? 0
+      const end = endIndex ?? this.getFlatValue(store, key).toJSON().length
+
+      if (start === end) return false
+
+      tx.update(this.isValidFlatValue, key, (prev) => {
+        prev.delete(start, end - start)
+        return prev
+      })
+      tx.setCaret({key, index: start})
+
+      return true
+    },
+
     deleteBackward({tx, key}, [index], [endIndex]) {
       if (typeof index !== 'number') return false
       if (index == null || index !== endIndex) return false
