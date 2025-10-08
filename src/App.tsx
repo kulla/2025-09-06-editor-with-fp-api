@@ -5,13 +5,13 @@ import { padStart } from 'es-toolkit/compat'
 import { html as beautifyHtml } from 'js-beautify'
 import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Command, dispatchCommand } from './commands'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
 import { RootType } from './nodes/concrete-node-types'
 import type { JSONValue } from './nodes/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
-import { Command, dispatchCommand } from './commands'
 
 const initialValue: JSONValue<typeof RootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },

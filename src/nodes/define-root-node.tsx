@@ -42,7 +42,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             contentEditable
             suppressContentEditableWarning
             spellCheck={false}
-            // @ts-ignore-error React types are wrong
+            // @ts-expect-error-error React types are wrong
             onKeyDown={onKeyDown}
           >
             {childType.render(store, childKey)}
