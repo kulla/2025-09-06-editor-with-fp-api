@@ -33,12 +33,6 @@ const rootKey: RootKey = 'root'
 export default function App() {
   const { store } = useEditorStore()
 
-  useEffect(() => {
-    if (store.has(rootKey)) return
-
-    store.update((tx) => RootType.attachRoot(tx, rootKey, initialValue))
-  }, [store])
-
   const updateCursorFromSelection = useCallback(() => {
     const cursor = getCurrentCursor()
 
@@ -65,6 +59,12 @@ export default function App() {
       setSelection(store.getCursor())
     }
   }, [store, store.updateCount])
+
+  useEffect(() => {
+    if (store.has(rootKey)) return
+
+    store.update((tx) => RootType.attachRoot(tx, rootKey, initialValue))
+  }, [store])
 
   return (
     <main className="p-10">
