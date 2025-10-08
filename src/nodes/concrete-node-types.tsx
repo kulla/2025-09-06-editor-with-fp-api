@@ -5,6 +5,7 @@ import { defineLiteralNode } from './core/define-literal-nodes'
 import { defineNonRootNode } from './core/define-non-root-node'
 import { defineObjectNode } from './core/define-object-node'
 import { definePrimitiveNode } from './core/define-primitive-node'
+import { defineRootNode } from './core/define-root-node'
 import { defineUnionNode } from './core/define-union-node'
 import { defineWrappedNode } from './core/define-wrapped-node'
 import { NoIndexTrait } from './core/node-path'
@@ -129,3 +130,5 @@ export const DocumentItemType = defineUnionNode(
 ).finish('documentItem')
 
 export const DocumentType = defineArrayNode(DocumentItemType).finish('document')
+
+export const AppRootType = defineRootNode(DocumentType).finish('root')

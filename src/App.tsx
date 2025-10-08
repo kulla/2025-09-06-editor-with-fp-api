@@ -7,13 +7,11 @@ import { useCallback, useEffect } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DebugPanel } from './components/debug-panel'
 import { useEditorStore } from './hooks/use-editor-store'
-import { DocumentType } from './nodes/concrete-node-types'
-import { defineRootNode } from './nodes/core/define-root-node'
+import { AppRootType } from './nodes/concrete-node-types'
 import type { JSONValue } from './nodes/core/types'
 import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
 
-const AppRootType = defineRootNode(DocumentType).finish('root')
 const initialValue: JSONValue<typeof AppRootType> = [
   { type: 'paragraph', value: 'Hello, Rsbuild!' },
   {
