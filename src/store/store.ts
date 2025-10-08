@@ -71,23 +71,27 @@ export class EditorStore {
     this.ydoc.off('update', listener)
   }
 
-  update(updateFn: (tx: Transaction) => void) {
+  update<A>(updateFn: (tx: Transaction) => A): A {
     if (this.currentTransaction) {
       // If we're already in a transaction, just call the update function directly
-      updateFn(this.currentTransaction)
-      return
+      return updateFn(this.currentTransaction)
     } else {
+      // TODO: Find a better way to handle this
+      let result = null as unknown as A
+
       this.ydoc.transact(() => {
         this.currentTransaction = this.createNewTransaction()
 
         try {
-          updateFn(this.currentTransaction)
+          result = updateFn(this.currentTransaction)
 
           this.incrementUpdateCount()
         } finally {
           this.currentTransaction = null
         }
       })
+
+      return result
     }
   }
 

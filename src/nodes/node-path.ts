@@ -20,7 +20,7 @@ export function getPathToRoot(store: EditorStore, point: Point): Path {
   let parentKey = store.getParentKey(point.key)
 
   while (parentKey != null) {
-    const index = getNodeType(parentKey).getIndexWithin(
+    const index = getNodeType(store, parentKey).getIndexWithin(
       store,
       parentKey,
       path[0].key,

@@ -26,7 +26,7 @@ export interface NodeType<J = unknown, F = FlatValue> {
       key: Key,
       start: IndexPath,
       end: IndexPath,
-      ...args: C extends Command ? CommandPayload<C> : []
+      ...args: CommandPayload<C>
     ) => boolean
   }
 }

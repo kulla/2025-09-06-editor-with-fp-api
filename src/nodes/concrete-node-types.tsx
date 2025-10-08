@@ -1,5 +1,7 @@
 import { invariant, isBoolean } from 'es-toolkit'
 import * as Y from 'yjs'
+import type { EditorStore } from '../store/store'
+import type { Key } from '../store/types'
 import { defineArrayNode } from './define-array-node'
 import { defineLiteralNode } from './define-literal-nodes'
 import { defineNonRootNode } from './define-non-root-node'
@@ -151,7 +153,8 @@ const nodeTypeMap: Record<string, NodeType | undefined> = Object.fromEntries(
   allNodeTypes.map((n) => [n.typeName, n]),
 )
 
-export function getNodeType(typeName: string): NodeType {
+export function getNodeType(store: EditorStore, key: Key): NodeType {
+  const typeName = store.getTypeName(key)
   const node = nodeTypeMap[typeName]
 
   invariant(node, `Unknown node type: ${typeName}`)
