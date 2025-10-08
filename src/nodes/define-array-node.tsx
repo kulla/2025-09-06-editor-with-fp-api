@@ -1,3 +1,4 @@
+import { invariant } from 'es-toolkit'
 import { isArrayOf } from '../guards'
 import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
@@ -40,6 +41,10 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
       },
 
       getIndexWithin(store, key, childKey) {
+        invariant(
+          isNonRootKey(childKey),
+          'Child key must be a non-root key in ArrayNode.getIndexWithin',
+        )
         const childKeys = this.getFlatValue(store, key)
         return childKeys.indexOf(childKey)
       },

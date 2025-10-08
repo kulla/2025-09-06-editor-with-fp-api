@@ -15,7 +15,7 @@ export interface NodeType<J = unknown, F = FlatValue> {
   getParentKey(store: EditorStore, key: Key): Key | null
   render(store: EditorStore, key: Key): React.ReactNode
   toJsonValue(store: EditorStore, key: Key): J
-  getIndexWithin(store: EditorStore, key: Key, childKey: NonRootKey): Index
+  getIndexWithin(store: EditorStore, key: Key, childKey: Key): Index
 
   onCommand?: {
     [C in Command]?: (
