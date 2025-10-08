@@ -124,11 +124,11 @@ export const MultipleChoiceExerciseNode = defineObjectNode(
   })
   .finish('multipleChoiceExercise')
 
-export const DocumentItemType = defineUnionNode(
+export const DocumentItemNode = defineUnionNode(
   [ParagraphNode, MultipleChoiceExerciseNode],
   (json) => json.type,
 ).finish('documentItem')
 
-export const DocumentType = defineArrayNode(DocumentItemType).finish('document')
+export const DocumentNode = defineArrayNode(DocumentItemNode).finish('document')
 
-export const AppRootType = defineRootNode(DocumentType).finish('root')
+export const RootNode = defineRootNode(DocumentNode).finish('root')
