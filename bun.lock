@@ -15,14 +15,14 @@
         "yjs": "^13.6.27",
       },
       "devDependencies": {
-        "@biomejs/biome": "^2.2.5",
-        "@rsbuild/core": "^1.5.14",
+        "@biomejs/biome": "^2.2.6",
+        "@rsbuild/core": "^1.5.17",
         "@rsbuild/plugin-react": "^1.4.1",
         "@tailwindcss/postcss": "^4.1.14",
         "@types/js-beautify": "^1.14.3",
-        "@types/react-dom": "^19.2.1",
+        "@types/react": "^19.2.2",
         "@y/websocket-server": "^0.1.1",
-        "daisyui": "^5.1.29",
+        "daisyui": "^5.2.3",
         "tailwindcss": "^4.1.14",
         "typescript": "^5.9.3",
       },
@@ -158,8 +158,6 @@
     "@types/js-beautify": ["@types/js-beautify@1.14.3", "", {}, "sha512-FMbQHz+qd9DoGvgLHxeqqVPaNRffpIu5ZjozwV8hf9JAGpIOzuAf4wGbRSo8LNITHqGjmmVjaMggTT5P4v4IHg=="],
 
     "@types/react": ["@types/react@19.2.2", "", { "dependencies": { "csstype": "^3.0.2" } }, "sha512-6mDvHUFSjyT2B2yeNx2nUgMxh9LtOWvkhIU3uePn2I2oyNymUAX1NIsdgviM4CH+JSrp2D2hsMvJOkxY+0wNRA=="],
-
-    "@types/react-dom": ["@types/react-dom@19.2.1", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-/EEvYBdT3BflCWvTMO7YkYBHVE9Ci6XdqZciZANQgKpaiDRGOLIlRo91jbTNRQjgPFWVaRxcYc0luVNFitz57A=="],
 
     "@y/websocket-server": ["@y/websocket-server@0.1.1", "", { "dependencies": { "lib0": "^0.2.102", "y-protocols": "^1.0.5" }, "optionalDependencies": { "ws": "^6.2.1", "y-leveldb": "^0.1.0" }, "peerDependencies": { "yjs": "^13.5.6" }, "bin": { "y-websocket-server": "src/server.js", "y-websocket": "src/server.js" } }, "sha512-pPtXm5Ceqs4orhXXHwm2I+u1mKNBDNzlrwNiI7OMwM7PlVS4WCMpiIuSB8WsYeSuISbvpXPNvaj6H1MoQBbE+g=="],
 
