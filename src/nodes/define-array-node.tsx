@@ -48,5 +48,43 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
         const childKeys = this.getFlatValue(store, key)
         return childKeys.indexOf(childKey)
       },
+
+      delete(
+        { tx, key, store },
+        [startIdx, ...startPath],
+        [endIdx, ...endPath],
+        deleteKind,
+      ) {
+        const childKeys = this.getFlatValue(store, key)
+
+        let startIndex = startIdx ?? 0
+        let endIndex = endIdx ?? childKeys.length
+
+        if (typeof startIndex !== 'number' || typeof endIndex !== 'number') {
+          return false
+        }
+
+        if (startIndex === endIndex) {
+          if (deleteKind === 'backward') {
+            startIndex = Math.max(0, startIndex - 1)
+          } else if (deleteKind === 'forward') {
+            endIndex = Math.min(childKeys.length, endIndex + 1)
+          }
+        }
+
+        if (
+          startIndex < 0 ||
+          endIndex > childKeys.length ||
+          startIndex >= endIndex
+        ) {
+          return false
+        }
+
+        tx.update(this.isValidFlatValue, key, (array) => {
+          return array.filter((_, idx) => idx < startIndex || idx >= endIndex)
+        })
+
+        return true
+      },
     })
 }
