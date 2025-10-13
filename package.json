@@ -14,7 +14,7 @@
   "dependencies": {
     "@picocss/pico": "^2.1.1",
     "clsx": "^2.1.1",
-    "es-toolkit": "^1.39.10",
+    "es-toolkit": "^1.40.0",
     "js-beautify": "^1.15.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -24,13 +24,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
-    "@rsbuild/core": "^1.5.13",
+    "@rsbuild/core": "^1.5.17",
     "@rsbuild/plugin-react": "^1.4.1",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/js-beautify": "^1.14.3",
     "@types/react-dom": "^19.2.1",
     "@y/websocket-server": "^0.1.1",
-    "daisyui": "^5.1.27",
+    "daisyui": "^5.2.3",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.9.3"
   }
