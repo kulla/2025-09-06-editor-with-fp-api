@@ -23,14 +23,14 @@
     "yjs": "^13.6.27"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
-    "@rsbuild/core": "^1.5.14",
+    "@biomejs/biome": "^2.2.6",
+    "@rsbuild/core": "^1.5.17",
     "@rsbuild/plugin-react": "^1.4.1",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/js-beautify": "^1.14.3",
     "@types/react-dom": "^19.2.1",
     "@y/websocket-server": "^0.1.1",
-    "daisyui": "^5.1.29",
+    "daisyui": "^5.2.3",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.9.3"
   }
