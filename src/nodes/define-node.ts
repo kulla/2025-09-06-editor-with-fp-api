@@ -13,8 +13,6 @@ export function defineNode<J, F extends FlatValue>() {
     },
 
     insertText: () => false,
-    deleteBackward: () => false,
-    deleteForward: () => false,
-    deleteRange: () => false,
+    delete: () => false,
   })
 }

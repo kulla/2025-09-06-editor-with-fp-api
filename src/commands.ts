@@ -1,18 +1,17 @@
-import {takeWhile, zip} from 'es-toolkit'
-import {getNodeType} from './nodes/concrete-node-types'
-import {getPathToRoot, type IndexPath, type Path} from './nodes/node-path'
-import {isCollapsed} from './selection'
-import type {EditorStore} from './store/store'
+import { takeWhile, zip } from 'es-toolkit'
+import { getNodeType } from './nodes/concrete-node-types'
+import { getPathToRoot, type IndexPath, type Path } from './nodes/node-path'
+import { isCollapsed } from './selection'
+import type { EditorStore } from './store/store'
 
 export enum Command {
   InsertText = 'insertText',
-  DeleteBackward = 'deleteBackward',
-  DeleteForward = 'deleteForward',
-  DeleteRange = 'deleteRange',
+  Delete = 'delete',
 }
 
 interface CommandPayloads {
   [Command.InsertText]: [string]
+  [Command.Delete]: ['backward' | 'forward' | 'between']
 }
 
 export type CommandPayload<C extends Command> = C extends keyof CommandPayloads
@@ -29,21 +28,17 @@ export function dispatchCommand<C extends Command>(
 
     if (cursor == null) return true
 
-    if (command !== Command.DeleteRange && !isCollapsed(cursor)) {
-      const result = dispatchCommand(store, Command.DeleteRange)
+    if (!isCollapsed(cursor) && payload[0] !== 'between') {
+      const result = dispatchCommand(store, Command.Delete, 'between')
 
       if (!result) return false
 
-      if (
-        command === Command.DeleteBackward ||
-        command === Command.DeleteForward
-      ) {
-        // If we delete a range, we don't need to handle backward or forward deletion
+      if (command === Command.Delete) {
         return true
       }
     }
 
-    const {start, end} = cursor
+    const { start, end } = cursor
     const startPath = getPathToRoot(store, start)
     const endPath = getPathToRoot(store, end)
 
@@ -54,10 +49,10 @@ export function dispatchCommand<C extends Command>(
 
     const startIndex = startPath
       .slice(Math.max(commonPath.length - 1, 0))
-      .map(({index}) => index)
+      .map(({ index }) => index)
     const endIndex = endPath
       .slice(Math.max(commonPath.length - 1, 0))
-      .map(({index}) => index)
+      .map(({ index }) => index)
 
     let targetKey = commonPath.pop()?.key ?? startPath[0].key
 
@@ -65,7 +60,7 @@ export function dispatchCommand<C extends Command>(
       const targetType = getNodeType(store, targetKey)
       // TODO: Remove type assertions when possible
       const result = targetType[command](
-        {tx, store, key: targetKey},
+        { tx, store, key: targetKey },
         startIndex as IndexPath,
         endIndex as IndexPath,
         // @ts-expect-error

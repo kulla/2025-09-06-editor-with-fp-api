@@ -17,9 +17,7 @@ export interface NodeType<J = unknown, F = FlatValue> {
   getIndexWithin(store: EditorStore, key: Key, childKey: Key): Index
 
   [Command.InsertText]: OnCommand<Command.InsertText>
-  [Command.DeleteBackward]: OnCommand<Command.DeleteBackward>
-  [Command.DeleteForward]: OnCommand<Command.DeleteForward>
-  [Command.DeleteRange]: OnCommand<Command.DeleteRange>
+  [Command.Delete]: OnCommand<Command.Delete>
 }
 
 type OnCommand<C extends Command> = (
