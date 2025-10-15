@@ -7,7 +7,7 @@ import {
   type Transaction,
 } from '../store/types'
 import { defineNode } from './define-node'
-import { caluclateIndexPath, NoIndexTrait, shiftIndexRange } from './node-path'
+import { NoIndexTrait } from './node-path'
 import type { NonRootNodeType } from './types'
 
 export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
@@ -34,8 +34,6 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
 
       render(store, key, onKeyDown) {
         const childKey = this.getFlatValue(store, key)
-        const indexRange = caluclateIndexPath(store, store.getCursor())
-
         return (
           <article
             key={key}
@@ -46,7 +44,7 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             spellCheck={false}
             onKeyDownCapture={onKeyDown}
           >
-            {childType.render(store, childKey, shiftIndexRange(indexRange))}
+            {childType.render(store, childKey)}
           </article>
         )
       },
