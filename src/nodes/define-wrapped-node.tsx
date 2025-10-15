@@ -1,6 +1,6 @@
 import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
-import { NoIndexTrait } from './node-path'
+import { NoIndexTrait, pushIndex } from './node-path'
 import type { NonRootNodeType } from './types'
 
 export function defineWrappedNode<T extends string, CJ>(
@@ -27,13 +27,17 @@ export function defineWrappedNode<T extends string, CJ>(
         )
       },
 
-      render(store, key) {
+      render(store, key, cursor) {
         const HtmlTag = this.HtmlTag
         const childKey = this.getFlatValue(store, key)
 
         return (
           <HtmlTag key={key} id={key} data-key={key}>
-            {childType.render(store, childKey)}
+            {childType.render(
+              store,
+              childKey,
+              pushIndex(cursor, undefined as never),
+            )}
           </HtmlTag>
         )
       },

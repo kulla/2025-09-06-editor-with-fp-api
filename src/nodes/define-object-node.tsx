@@ -9,6 +9,7 @@ import {
 import type { EditorStore } from '../store/store'
 import { isNonRootKey, type Key, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
+import { pushIndex } from './node-path'
 import type { JSONValue, NonRootNodeType } from './types'
 
 export function defineObjectNode<C extends Record<string, NonRootNodeType>>(
@@ -65,13 +66,13 @@ export function defineObjectNode<C extends Record<string, NonRootNodeType>>(
         })
       },
 
-      render(store, key) {
+      render(store, key, cursor) {
         const HtmlTag = this.HtmlTag
         const children = this.getFlatValue(store, key).map(
-          ([prop, childKey]) => {
+          ([prop, childKey], i) => {
             const childType = childTypes[prop]
 
-            return childType.render(store, childKey)
+            return childType.render(store, childKey, pushIndex(cursor, i))
           },
         )
 

@@ -10,7 +10,7 @@ import { definePrimitiveNode } from './define-primitive-node'
 import { defineRootNode } from './define-root-node'
 import { defineUnionNode } from './define-union-node'
 import { defineWrappedNode } from './define-wrapped-node'
-import { NoIndexTrait } from './node-path'
+import { NoIndexTrait, pushIndex } from './node-path'
 import type { NodeType } from './types'
 
 export const TextType = defineNonRootNode<string, Y.Text>()
@@ -117,14 +117,14 @@ export const MultipleChoiceAnswerType = defineObjectNode(
   ['isCorrect', 'text'],
 )
   .extend({
-    render(store, key) {
+    render(store, key, cursor) {
       const isCorrectKey = this.getPropKey(store, key, 'isCorrect')
       const textKey = this.getPropKey(store, key, 'text')
 
       return (
         <li key={key} id={key} data-key={key} className={this.typeName}>
-          {BooleanType.render(store, isCorrectKey)}
-          {TextType.render(store, textKey)}
+          {BooleanType.render(store, isCorrectKey, pushIndex(cursor, 0))}
+          {TextType.render(store, textKey, pushIndex(cursor, 1))}
         </li>
       )
     },
@@ -148,7 +148,7 @@ export const MultipleChoiceExerciseType = defineObjectNode(
   ['exercise', 'answers'],
 )
   .extend({
-    render(store, key) {
+    render(store, key, cursor) {
       const exerciseKey = this.getPropKey(store, key, 'exercise')
       const answersKey = this.getPropKey(store, key, 'answers')
 
@@ -163,10 +163,14 @@ export const MultipleChoiceExerciseType = defineObjectNode(
             <legend className="mt-2">
               <strong>Multiple Choice Exercise</strong>
             </legend>
-            {ContentType.render(store, exerciseKey)}
+            {ContentType.render(store, exerciseKey, pushIndex(cursor, 0))}
           </div>
           <div className="answers">
-            {MultipleChoiceAnswersType.render(store, answersKey)}
+            {MultipleChoiceAnswersType.render(
+              store,
+              answersKey,
+              pushIndex(cursor, 1),
+            )}
           </div>
         </fieldset>
       )

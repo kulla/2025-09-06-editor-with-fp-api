@@ -2,7 +2,7 @@ import type { Command, CommandPayload } from '../commands'
 import type { Guard } from '../guards'
 import type { EditorStore } from '../store/store'
 import type { FlatValue, Key, NonRootKey, Transaction } from '../store/types'
-import type { Index, IndexPath } from './node-path'
+import type { Index, IndexPath, TreeCursor } from './node-path'
 
 export interface NodeType<J = unknown, F = FlatValue> {
   FlatValueType?: F
@@ -34,7 +34,7 @@ type OnCommand<C extends Command> = (
 
 export interface NonRootNodeType<J = unknown, F = FlatValue>
   extends NodeType<J, F> {
-  render(store: EditorStore, key: Key): React.ReactNode
+  render(store: EditorStore, key: Key, cursor: TreeCursor): React.ReactNode
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 

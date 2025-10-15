@@ -7,7 +7,7 @@ import {
   type Transaction,
 } from '../store/types'
 import { defineNode } from './define-node'
-import { NoIndexTrait } from './node-path'
+import { getTreeCursor, NoIndexTrait, pushIndex } from './node-path'
 import type { NonRootNodeType } from './types'
 
 export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
@@ -34,6 +34,8 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
 
       render(store, key, onKeyDown) {
         const childKey = this.getFlatValue(store, key)
+        const treeCursor = getTreeCursor(store)
+
         return (
           <article
             key={key}
@@ -44,7 +46,11 @@ export function defineRootNode<CJ>(childType: NonRootNodeType<CJ>) {
             spellCheck={false}
             onKeyDownCapture={onKeyDown}
           >
-            {childType.render(store, childKey)}
+            {childType.render(
+              store,
+              childKey,
+              pushIndex(treeCursor, undefined as never),
+            )}
           </article>
         )
       },

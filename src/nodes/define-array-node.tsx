@@ -2,6 +2,7 @@ import { invariant } from 'es-toolkit'
 import { isArrayOf } from '../guards'
 import { isNonRootKey, type NonRootKey } from '../store/types'
 import { defineNonRootNode } from './define-non-root-node'
+import { pushIndex } from './node-path'
 import type { NonRootNodeType } from './types'
 
 export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
@@ -25,12 +26,12 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
         )
       },
 
-      render(store, key) {
+      render(store, key, cursor) {
         const HtmlTag = this.HtmlTag
         const childKeys = this.getFlatValue(store, key)
 
-        const children = childKeys.map((childKey) =>
-          childType.render(store, childKey),
+        const children = childKeys.map((childKey, i) =>
+          childType.render(store, childKey, pushIndex(cursor, i)),
         )
 
         return (

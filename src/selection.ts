@@ -1,8 +1,8 @@
 import { isKey, type Key } from './store/types'
 
-export interface Cursor {
-  start: Point
-  end: Point
+export interface Cursor<P = Point> {
+  start: P
+  end: P
 }
 
 export interface Point {
