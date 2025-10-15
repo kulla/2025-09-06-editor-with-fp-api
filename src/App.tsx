@@ -14,10 +14,10 @@ import { getCurrentCursor, setSelection } from './selection'
 import type { RootKey } from './store/types'
 
 const initialValue: JSONValue<typeof RootType> = [
-  { type: 'paragraph', value: 'Hello, Rsbuild!' },
+  { type: 'paragraph', value: 'Worksheet for capitals in Europe' },
   {
     type: 'paragraph',
-    value: 'This is a simple rich text editor built with React and Rsbuild.',
+    value: 'Fill in the correct capital for each country below.',
   },
   {
     type: 'multipleChoiceExercise',
