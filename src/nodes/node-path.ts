@@ -7,7 +7,7 @@ export type Path = PathFrame[]
 type PathFrame = { key: Key; index?: Index }
 
 export type Index = string | number | never
-export type IndexPath = [Index, ...Index[]] | []
+export type IndexPath = Index[]
 
 export const NoIndexTrait = {
   getIndexWithin(): never {
