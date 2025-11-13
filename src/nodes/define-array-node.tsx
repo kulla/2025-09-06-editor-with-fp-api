@@ -52,8 +52,8 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
 
       delete(
         { tx, key, store },
-        [startIdx, ...startPath],
-        [endIdx, ...endPath],
+        [startIdx, ..._startPath],
+        [endIdx, ..._endPath],
         deleteKind,
       ) {
         const childKeys = this.getFlatValue(store, key)
