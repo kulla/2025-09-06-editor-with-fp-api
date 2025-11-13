@@ -34,12 +34,7 @@ type OnCommand<C extends Command> = (
 
 export interface NonRootNodeType<J = unknown, F = FlatValue>
   extends NodeType<J, F> {
-  render(
-    store: EditorStore,
-    key: Key,
-    cursor: TreeCursor,
-    className?: string,
-  ): React.ReactNode
+  render(store: EditorStore, key: Key, cursor: TreeCursor): React.ReactNode
   store(tx: Transaction, json: J, parentKey: Key): NonRootKey
 }
 

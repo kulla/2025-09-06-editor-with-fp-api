@@ -30,9 +30,6 @@ export function defineArrayNode<CJ>(childType: NonRootNodeType<CJ>) {
         const HtmlTag = this.HtmlTag
         const childKeys = this.getFlatValue(store, key)
 
-        const { selection: { start = null, end = null } = {}, nodePath } =
-          cursor
-
         const children = childKeys.map((childKey, i) =>
           childType.render(store, childKey, pushIndex(cursor, i)),
         )
